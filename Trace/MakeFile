@@ -1,0 +1,14 @@
+CC = gcc
+CFLAGS = -Wall -Wextra -Ilib
+
+SRC = src/*.c
+LIBSRC = lib/*.c
+TARGET = app
+
+all: $(TARGET)
+
+$(TARGET):
+	$(CC) $(CFLAGS) $(SRC) $(LIBSRC) -o $(TARGET)
+
+clean:
+	rm -f $(TARGET)
