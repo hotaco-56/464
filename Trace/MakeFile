@@ -1,9 +1,9 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Ilib
+CFLAGS = -Wall -Wextra -Wno-register -Wno-unused-parameter -Ilib -v
 
-SRC = src/*.c
-LIBSRC = lib/*.c
-TARGET = app
+SRC = src/*.cpp
+LIBSRC = lib/*.cpp
+TARGET = bin/trace
 
 all: $(TARGET)
 
