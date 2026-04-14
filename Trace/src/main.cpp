@@ -1,11 +1,16 @@
 #include <iostream>
 #include <cstdlib>
 
+#include "PacketTracer/PacketTracer.h"
+
 int main(int argc, char* argv[]) 
 {
-    
-    std::cout << "cheese dick" << std::endl;
-    std::cout << "cheese dick" << std::endl;
+    if (argc < 2) {
+        perror("not enough arguments");
+    }
+
+    PacketTracer tracer;
+    tracer.sniffPackets(argv[1]);
 
     return 0;
 }

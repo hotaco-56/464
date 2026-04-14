@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -Wall -Wextra $(shell find lib -type d -exec printf -- '-I%s ' {} \;)
-CXXWNO = -Wno-unused-parameter -Wno-register
+CXXWNO = -Wno-register
 
 SRC = $(wildcard src/*.cpp)
 LIBSRC = $(shell find lib -name '*.cpp')
@@ -10,7 +10,10 @@ TARGET = bin/trace
 all: $(TARGET)
 
 $(TARGET): $(SRC) $(LIBSRC) $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(CXXWNO) $(SRC) $(LIBSRC) -o $(TARGET)
+	$(CXX) $(CXXFLAGS) $(CXXWNO) $(SRC) $(LIBSRC) -o $(TARGET) -lpcap
 
 clean:
 	rm -f $(TARGET)
+
+run:
+	./$(TARGET)
