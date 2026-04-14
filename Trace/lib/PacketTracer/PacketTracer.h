@@ -7,6 +7,7 @@
 #include <string.h>
 #include <cstdlib>
 #include "Checksum/checksum.h"
+#include <iostream>
 
 class PacketTracer
 {
@@ -34,6 +35,8 @@ private:
     uint8_t getIPTTL(void) {return *(uint8_t*)(ipHeader.ttl);};
     uint8_t getIPProtocol(void) {return *(uint8_t*)(ipHeader.protocol);};
     uint16_t getIPHeaderChecksum(void) {return *(uint16_t*)(ipHeader.headerChecksum);};
+    char* getIPSrcAddr(void) {return inet_ntoa( *(in_addr*)(ipHeader.srcAddr));};
+    char* getIPDstAddr(void) {return inet_ntoa( *(in_addr*)(ipHeader.dstAddr));};
 
     uint16_t getARPOpcode(void) {return ntohs( *((uint16_t*)(arpHeader.opcode)) );};
     char* getARPSenderMAC(void) {return ether_ntoa((ether_addr*)arpHeader.senderMac); };
@@ -41,16 +44,40 @@ private:
     char* getARPTargetMAC(void) {return ether_ntoa((ether_addr*)arpHeader.targetMac); };
     char* getARPTargetIP(void) {return inet_ntoa( *(in_addr*)arpHeader.targetIP); };
 
-    bool checkIPHeaderChecksum(const u_char* data);
+    uint16_t getTCPLen(void) {return ntohs( *(uint16_t*)(tcpPseudoHeader.tcpLen));};
+    uint16_t getTCPSrcPort(void) {return ntohs(*(uint16_t*)(tcpHeader.srcPort));};
+    uint16_t getTCPDstPort(void) {return ntohs(*(uint16_t*)(tcpHeader.dstPort));};
+    uint32_t getTCPSeqNum(void) {return ntohl(*(uint32_t*)(tcpHeader.seqNum));};
+    uint32_t getTCPAckNum(void) {return ntohl(*(uint32_t*)(tcpHeader.ackNum));};
+    uint8_t getTCPFlags(void) {return *(uint8_t*)(tcpHeader.flags);};
+    uint16_t getTCPWinSize(void) {return ntohs(*(uint16_t*)(tcpHeader.winSize));};
+    uint16_t getTCPChecksum(void) {return *(uint16_t*)(tcpHeader.checksum);};
 
-    struct __attribute__((packed)) tcp_pseudo_hdr {
-        uint32_t srcAddr;
-        uint32_t dstAddr;
-        uint8_t zeroes;
-        uint8_t protocol;
-        uint16_t tcpLen;
+    uint16_t getUDPSrcPort(void) {return ntohs(*(uint16_t*)(udpHeader.srcPort));};
+    uint16_t getUDPDstPort(void) {return ntohs(*(uint16_t*)(udpHeader.dstPort));};
+
+    bool cmpIPHeaderChecksum(const u_char* data);
+    bool cmpTCPChecksum(const u_char* data);
+
+    struct  tcp_pseudo_hdr {
+        u_char srcAddr[4];
+        u_char dstAddr[4];
+        u_char zeroes[1];
+        u_char protocol[1];
+        u_char tcpLen[2];
     };
     tcp_pseudo_hdr tcpPseudoHeader;
+
+    struct tcp_header {
+        u_char srcPort[2];
+        u_char dstPort[2];
+        u_char seqNum[4];
+        u_char ackNum[4];
+        u_char flags[1];
+        u_char winSize[2];
+        u_char checksum[2];
+    };
+    tcp_header tcpHeader;
 
     struct eth_header {
         u_char dstMac[6];
@@ -78,6 +105,12 @@ private:
         u_char targetIP[4];
     };
     arp_header arpHeader;
+
+    struct udp_header {
+        u_char srcPort[2];
+        u_char dstPort[2];
+    };
+    udp_header udpHeader;
 
     const u_char* ipHeaderEndAddr;
     const u_char* ethHeaderEndAddr;

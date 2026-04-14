@@ -1,16 +1,8 @@
 #include "PacketTracer.h"
 
-#include <iostream>
 
-uint16_t getEtherType(const u_char*  &data);
-// uint16_t getIPType(const u_char* &data, tcp_pseudo_hdr* tcp_phdr);
-void processARP(const u_char* &data);
-void processICMP(const u_char* &data);
-// void processTCP(const u_char* &data, tcp_pseudo_hdr* tcp_phdr);
-void processUDP(const u_char* &data);
-void print_src_port(uint16_t pn);
-void print_dst_port(uint16_t pn);
-void print_protocol(uint8_t pn);
+std::string portToAscii(uint16_t pn);
+std::string protocolToAscii(uint16_t pn);
 void print_tcp_flags(uint8_t flag);
 
 PacketTracer::PacketTracer() {}
@@ -49,6 +41,22 @@ void PacketTracer::sniffPackets(const char* fname)
         case ETH_P_IP:
             processIPHeader(ethHeaderEndAddr);
             printIPHeader();
+
+            switch (getIPProtocol())
+            {
+            case 6:
+                processTCPHeader(ipHeaderEndAddr);
+                printTCPHeader();
+                break;
+            case 17:
+                processUDPHeader(ipHeaderEndAddr);
+                printUDPHeader();
+                break;
+            
+            default:
+                break;
+            }
+
             break;
         
         default:
@@ -90,6 +98,38 @@ void PacketTracer::processARPHeader(const u_char* data)
     memcpy(arpHeader.targetIP, data+24, 4);
 }
 
+void PacketTracer::processTCPHeader(const u_char* data)
+{
+    memcpy(tcpHeader.srcPort, data, sizeof(tcpHeader.srcPort));
+    memcpy(tcpHeader.dstPort, data+2, 2);
+    memcpy(tcpHeader.seqNum, data+4, 4);
+    memcpy(tcpHeader.ackNum, data+8, 4);
+    memcpy(tcpHeader.flags, data+13, 1);
+    memcpy(tcpHeader.winSize, data+14, 2);
+    memcpy(tcpHeader.checksum, data+16, 2);
+
+    memcpy(tcpPseudoHeader.srcAddr, ipHeader.srcAddr, sizeof(tcpPseudoHeader.srcAddr));
+    memcpy(tcpPseudoHeader.dstAddr, ipHeader.dstAddr, sizeof(tcpPseudoHeader.dstAddr));
+    memset(tcpPseudoHeader.zeroes, 0x00, sizeof(tcpPseudoHeader.zeroes));
+    memcpy(tcpPseudoHeader.protocol, ipHeader.protocol, sizeof(tcpPseudoHeader.protocol));
+
+    uint16_t tcp_len = htons(getIPPDULen() - (getIPHeaderLen() * 4));
+    memcpy(tcpPseudoHeader.tcpLen, &tcp_len, 2);
+}
+
+void PacketTracer::processUDPHeader(const u_char* data)
+{
+    memcpy(udpHeader.srcPort, data, 2);
+    memcpy(udpHeader.dstPort, data+2, 2);
+}
+
+void PacketTracer::printUDPHeader()
+{
+    std::cout << "\n\tUDP Header\n";
+    std::cout << "\t\tSource Port:  " << portToAscii(getUDPSrcPort()) << std::endl;
+    std::cout << "\t\tDest Port:  " << portToAscii(getUDPDstPort()) << std::endl;
+}
+
 void PacketTracer::printEthHeader()
 {
     std::cout << "\n\tEthernet Header\n";
@@ -108,13 +148,14 @@ void PacketTracer::printIPHeader()
     std::cout << "\t\tIP PDU Len: " << getIPPDULen() << std::endl;
     std::cout << "\t\tHeader Len (bytes): " << getIPHeaderLen() * 4 << std::endl;
     std::cout << "\t\tTTL: " << (uint16_t)getIPTTL() << std::endl;
-    std::cout << "\t\tProtocol: " << (uint16_t)getIPProtocol() << std::endl;
-    
+    std::cout << "\t\tProtocol: " << protocolToAscii((uint16_t)getIPProtocol()) << std::endl;
     std::cout << "\t\tChecksum: " 
-        << (checkIPHeaderChecksum(ethHeaderEndAddr) ? "Correct ":"Incorrect ") 
+        << (cmpIPHeaderChecksum(ethHeaderEndAddr) ? "Correct ":"Incorrect ") 
         << std::hex
         << "(0x" << ntohs(getIPHeaderChecksum()) << ")\n"
         << std::dec;
+    std::cout << "\t\tSender IP: " << getIPSrcAddr() << std::endl;
+    std::cout << "\t\tDest IP: " << getIPDstAddr() << std::endl;
 
 }
 
@@ -128,7 +169,40 @@ void PacketTracer::printARPHeader()
     std::cout << "\t\tTarget IP: " << getARPTargetIP() << std::endl << std::endl;
 }
 
-bool PacketTracer::checkIPHeaderChecksum(const u_char* data)
+void PacketTracer::printTCPHeader()
+{
+    std::cout << "\n\tTCP Header\n";
+    std::cout << "\t\tSegment Length: " << getTCPLen() << std::endl;
+    std::cout << "\t\tSource Port:  " << portToAscii(getTCPSrcPort()) << std::endl;
+    std::cout << "\t\tDest Port:  " << portToAscii(getTCPDstPort()) << std::endl;
+    std::cout << "\t\tSequence Number: " << getTCPSeqNum() << std::endl;
+    std::cout << "\t\tACK Number: " << getTCPAckNum() << std::endl;
+    print_tcp_flags(getTCPFlags());
+    std::cout << "\t\tWindow Size: " << getTCPWinSize() << std::endl;
+
+    std::cout << "\t\tChecksum: " 
+        << (cmpTCPChecksum(ipHeaderEndAddr) ? "Correct ":"Incorrect ") 
+        << std::hex
+        << "(0x" << ntohs(getTCPChecksum()) << ")\n"
+        << std::dec;
+}
+
+bool PacketTracer::cmpTCPChecksum(const u_char* data)
+{
+    uint8_t* tcp_phdrStart = (uint8_t*)data - 12;
+    memcpy(tcp_phdrStart, tcpPseudoHeader.srcAddr, 4);
+    memcpy(tcp_phdrStart+4, tcpPseudoHeader.dstAddr, 4);
+    memcpy(tcp_phdrStart+8, tcpPseudoHeader.zeroes, 1);
+    memcpy(tcp_phdrStart+9, tcpPseudoHeader.protocol, 1);
+    memcpy(tcp_phdrStart+10, tcpPseudoHeader.tcpLen, 2);
+    uint16_t received_chksum = getTCPChecksum();
+    *(uint16_t*)(data+16) = 0x0000; /*zero checksum*/
+    uint16_t computed_chksum = in_cksum((unsigned short*)(tcp_phdrStart), 12 + getTCPLen());
+
+    return (received_chksum == computed_chksum);
+}
+
+bool PacketTracer::cmpIPHeaderChecksum(const u_char* data)
 {
     uint16_t received_chksum = getIPHeaderChecksum(); 
     *(uint16_t*)(data+10) = 0x0000; /*zero checksum*/
@@ -137,152 +211,29 @@ bool PacketTracer::checkIPHeaderChecksum(const u_char* data)
     return (received_chksum == computed_chksum);
 }
 
-void processARP(const u_char* &data)
-{
-    printf("\n\tARP Header\n");
-
-    data += 6;
-    u_char opcode[2];
-    memcpy(opcode, data, 2);
-    data += 2;
-
-    //Opcode
-    uint16_t op = ntohs( *((uint16_t*)(opcode)) );
-    if (op == 1)
-        printf("\t\tOpcode: Request\n");
-    else if (op == 2)
-        printf("\t\tOpcode: Reply\n");
-
-    //Sender MAC
-    u_char sender_mac[6];
-    memcpy(sender_mac, data, 6);
-    data += 6;
-    printf("\t\tSender MAC: %s\n", ether_ntoa((ether_addr*)sender_mac));
-
-    //Sender IP
-    u_char sender_ip[4];
-    memcpy(sender_ip, data, 4);
-    data += 4;
-    printf("\t\tSender IP: %s\n", inet_ntoa( *(in_addr*)(sender_ip) ));
-
-    //Target MAC
-    u_char target_mac[6];
-    memcpy(target_mac, data, 6);
-    data += 6;
-    printf("\t\tTarget MAC: %s\n", ether_ntoa((ether_addr*)target_mac));
-
-    //Target IP
-    u_char target_ip[4];
-    memcpy(target_ip, data, 4);
-    data += 4;
-    printf("\t\tTarget IP: %s\n\n", inet_ntoa( *(in_addr*)(target_ip) ));
-}
-
-
-// void processTCP(const u_char* &data, tcp_pseudo_hdr* tcp_phdr)
-// {
-//     printf("\n\tTCP Header\n");
-    
-//     //Segment Length
-//     printf("\t\tSegment Length: %u\n", tcp_phdr->tcp_len);
-
-//     //Source Port
-//     u_char src_port[2];
-//     memcpy(src_port, data, 2);
-//     print_src_port(ntohs( *(uint16_t*)(src_port)));
-
-//     //Destination Port
-//     u_char dest_port[2];
-//     memcpy(dest_port, data+2, 2);
-//     print_dst_port(ntohs( *(uint16_t*)(dest_port)));
-
-//     //Sequence Number
-//     u_char sequence_num[4];
-//     memcpy(sequence_num, data+4, 4);
-//     printf("\t\tSequence Number: %u\n", ntohl(*(uint32_t*)(sequence_num)) );
-
-//     //Ack Number
-//     u_char ack_num[4];
-//     memcpy(ack_num, data+8, 4);
-//     printf("\t\tACK Number: %u\n", ntohl(*(uint32_t*)(ack_num)) );
-    
-//     //Check Flags
-//     u_char flags[1];
-//     memcpy(flags, data+13, 1);
-//     print_tcp_flags(*(uint8_t*)(flags));
-
-//     //Window Size
-//     u_char win_size[2];
-//     memcpy(win_size, data+14,2);
-//     std::cout << "\t\tWindow Size: " << ntohs( *(uint16_t*)(win_size) ) << std::endl;
-
-//     //Checksum
-//     u_char chksum[2];
-//     mempcpy(chksum, data+16, 2);
-
-//     uint16_t actual_chksum = ntohs(*(uint16_t*)(chksum));
-//     *(uint16_t*)(data+16) = 0x0000; /*zero checksum*/
-
-//     memcpy(tcp_phdr, data-13, 12);
-//     uint16_t computed_chksum = ntohs(in_cksum((unsigned short*)(data-13), 12 + tcp_phdr->tcp_len));
-
-//     if (actual_chksum == computed_chksum)
-//         printf("\t\tChecksum: Correct (0x%04x)\n", actual_chksum);
-//     else
-//         printf("\t\tChecksum: Incorrect (0x%04x) (0x%04x)\n", actual_chksum, computed_chksum);
-
-// }
-
-void processUDP(const u_char* &data)
-{
-    printf("\n\tUDP Header\n");
-
-    //Source Port
-    u_char src_port[2];
-    memcpy(src_port, data, 2);
-    print_src_port(ntohs( *(uint16_t*)(src_port)));
-
-    //Destination Port
-    u_char dest_port[2];
-    memcpy(dest_port, data+2, 2);
-    print_dst_port(ntohs( *(uint16_t*)(dest_port)));
-}
-
-void print_src_port(uint16_t pn)
-{
-    if (pn == 80)
-        std::cout << "\t\tSource Port:  HTTP\n";
-    else if (pn == 53)
-        std::cout << "\t\tSource Port:  DNS\n";
-    else
-        std::cout << "\t\tSource Port:  "<< pn << std::endl;
-}
-
-void print_dst_port(uint16_t pn)
-{
-    if (pn == 80)
-        std::cout << "\t\tDest Port:  HTTP\n";
-    else if (pn == 53)
-        std::cout << "\t\tDest Port:  DNS\n";
-    else
-        std::cout << "\t\tDest Port:  "<< pn << std::endl;
-}
-
-void print_protocol(uint8_t pn)
+std::string portToAscii(uint16_t pn)
 {
     switch (pn)
     {
-    case 1:
-        std::cout << "\t\tProtocol: ICMP\n";
-        return;
-    case 6:
-        std::cout << "\t\tProtocol: TCP\n";
-        return;
-    case 17:
-        std::cout << "\t\tProtocol: UDP\n";
-        return;
+    case 80:
+        return "HTTP";
+    case 53:
+        return "DNS";
     default:
-        return;
+        return std::to_string(pn);
+    }
+}
+
+std::string protocolToAscii(uint16_t pn)
+{
+    switch (pn)
+    {
+    case 6:
+        return "TCP";
+    case 17:
+        return "UDP";
+    default:
+        return std::to_string(pn);
     }
 }
 
