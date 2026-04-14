@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include "Checksum/checksum.h"
 #include <iostream>
+#include <iomanip>
 
 class PacketTracer
 {
@@ -19,12 +20,14 @@ public:
     void printARPHeader(void);
     void printTCPHeader(void);
     void printUDPHeader(void);
+    void printICMPHeader(void);
 private:
     void processEthHeader(const u_char* data);
     void processIPHeader(const u_char* data);
     void processARPHeader(const u_char* data);
     void processUDPHeader(const u_char* data);
     void processTCPHeader(const u_char* data);
+    void processICMPHeader(const u_char* data);
 
     uint16_t getEthType(void) {return ntohs( *(uint16_t*)(ethHeader.type) );};
     char* getEthDstMAC(void) {return ether_ntoa( (ether_addr*)(ethHeader.dstMac) ); };
@@ -56,8 +59,15 @@ private:
     uint16_t getUDPSrcPort(void) {return ntohs(*(uint16_t*)(udpHeader.srcPort));};
     uint16_t getUDPDstPort(void) {return ntohs(*(uint16_t*)(udpHeader.dstPort));};
 
+    uint8_t getICMPType(void) {return *(uint8_t*)(icmpHeader.type);};
+
     bool cmpIPHeaderChecksum(const u_char* data);
     bool cmpTCPChecksum(const u_char* data);
+
+    struct icmp_header {
+        u_char type[1];
+    };
+    icmp_header icmpHeader;
 
     struct  tcp_pseudo_hdr {
         u_char srcAddr[4];
@@ -115,6 +125,5 @@ private:
     const u_char* ipHeaderEndAddr;
     const u_char* ethHeaderEndAddr;
 };
-    
 
 #endif

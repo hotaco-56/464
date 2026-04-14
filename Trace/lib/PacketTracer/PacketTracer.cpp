@@ -1,6 +1,5 @@
 #include "PacketTracer.h"
 
-
 std::string portToAscii(uint16_t pn);
 std::string protocolToAscii(uint16_t pn);
 void print_tcp_flags(uint8_t flag);
@@ -44,6 +43,10 @@ void PacketTracer::sniffPackets(const char* fname)
 
             switch (getIPProtocol())
             {
+            case 1:
+                processICMPHeader(ipHeaderEndAddr);
+                printICMPHeader();
+                break;
             case 6:
                 processTCPHeader(ipHeaderEndAddr);
                 printTCPHeader();
@@ -86,7 +89,7 @@ void PacketTracer::processIPHeader(const u_char* data)
     memcpy(ipHeader.srcAddr, data+12, 4);
     memcpy(ipHeader.dstAddr, data+16, 4);
 
-    ipHeaderEndAddr = data + 20;
+    ipHeaderEndAddr = data + 20 + ((getIPHeaderLen() - 5) * 4);
 }
 
 void PacketTracer::processARPHeader(const u_char* data)
@@ -123,6 +126,11 @@ void PacketTracer::processUDPHeader(const u_char* data)
     memcpy(udpHeader.dstPort, data+2, 2);
 }
 
+void PacketTracer::processICMPHeader(const u_char* data)
+{
+    memcpy(icmpHeader.type, data, 1);
+}
+
 void PacketTracer::printUDPHeader()
 {
     std::cout << "\n\tUDP Header\n";
@@ -149,11 +157,8 @@ void PacketTracer::printIPHeader()
     std::cout << "\t\tHeader Len (bytes): " << getIPHeaderLen() * 4 << std::endl;
     std::cout << "\t\tTTL: " << (uint16_t)getIPTTL() << std::endl;
     std::cout << "\t\tProtocol: " << protocolToAscii((uint16_t)getIPProtocol()) << std::endl;
-    std::cout << "\t\tChecksum: " 
-        << (cmpIPHeaderChecksum(ethHeaderEndAddr) ? "Correct ":"Incorrect ") 
-        << std::hex
-        << "(0x" << ntohs(getIPHeaderChecksum()) << ")\n"
-        << std::dec;
+    std::cout << "\t\tChecksum: " << (cmpIPHeaderChecksum(ethHeaderEndAddr) ? "Correct ":"Incorrect ");
+    printf("(0x%04x)\n", ntohs(getIPHeaderChecksum()));
     std::cout << "\t\tSender IP: " << getIPSrcAddr() << std::endl;
     std::cout << "\t\tDest IP: " << getIPDstAddr() << std::endl;
 
@@ -180,11 +185,22 @@ void PacketTracer::printTCPHeader()
     print_tcp_flags(getTCPFlags());
     std::cout << "\t\tWindow Size: " << getTCPWinSize() << std::endl;
 
-    std::cout << "\t\tChecksum: " 
-        << (cmpTCPChecksum(ipHeaderEndAddr) ? "Correct ":"Incorrect ") 
-        << std::hex
-        << "(0x" << ntohs(getTCPChecksum()) << ")\n"
-        << std::dec;
+    std::cout << "\t\tChecksum: " << (cmpTCPChecksum(ipHeaderEndAddr) ? "Correct ":"Incorrect ");
+    printf("(0x%04x)\n", ntohs(getTCPChecksum()));
+}
+
+void PacketTracer::printICMPHeader()
+{
+    std::cout << "\n\tICMP Header\n";
+    std::string type = "";
+    if (getICMPType() == 0)
+        type = "Reply";
+    else if (getICMPType() == 8)
+        type = "Request";
+    else
+        type = std::to_string(getICMPType());
+
+    std::cout << "\t\tType: " << type << std::endl;
 }
 
 bool PacketTracer::cmpTCPChecksum(const u_char* data)
@@ -228,12 +244,14 @@ std::string protocolToAscii(uint16_t pn)
 {
     switch (pn)
     {
+    case 1:
+        return "ICMP";
     case 6:
         return "TCP";
     case 17:
         return "UDP";
     default:
-        return std::to_string(pn);
+        return "Unknown";
     }
 }
 

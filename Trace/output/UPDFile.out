@@ -71,7 +71,7 @@ Packet number: 4  Packet Len: 196
 		Header Len (bytes): 20
 		TTL: 253
 		Protocol: UDP
-		Checksum: Correct (0x870)
+		Checksum: Correct (0x0870)
 		Sender IP: 64.166.172.8
 		Dest IP: 192.168.1.102
 
@@ -111,7 +111,7 @@ Packet number: 6  Packet Len: 542
 		Header Len (bytes): 20
 		TTL: 253
 		Protocol: UDP
-		Checksum: Correct (0x715)
+		Checksum: Correct (0x0715)
 		Sender IP: 64.166.172.8
 		Dest IP: 192.168.1.102
 

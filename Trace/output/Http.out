@@ -40,7 +40,7 @@ Packet number: 2  Packet Len: 54
 		Header Len (bytes): 20
 		TTL: 46
 		Protocol: TCP
-		Checksum: Correct (0x812)
+		Checksum: Correct (0x0812)
 		Sender IP: 92.222.40.41
 		Dest IP: 192.168.1.241
 
@@ -69,7 +69,7 @@ Packet number: 3  Packet Len: 373
 		Header Len (bytes): 20
 		TTL: 46
 		Protocol: TCP
-		Checksum: Correct (0x6d2)
+		Checksum: Correct (0x06d2)
 		Sender IP: 92.222.40.41
 		Dest IP: 192.168.1.241
 
@@ -214,7 +214,7 @@ Packet number: 8  Packet Len: 195
 		Header Len (bytes): 20
 		TTL: 46
 		Protocol: TCP
-		Checksum: Correct (0x346)
+		Checksum: Correct (0x0346)
 		Sender IP: 92.222.40.41
 		Dest IP: 192.168.1.241
 
@@ -316,7 +316,7 @@ Packet number: 11  Packet Len: 620
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 256
-		Checksum: Correct (0x9b5)
+		Checksum: Correct (0x09b5)
 
 Packet number: 12  Packet Len: 66
 
@@ -562,7 +562,7 @@ Packet number: 20  Packet Len: 54
 		Header Len (bytes): 20
 		TTL: 46
 		Protocol: TCP
-		Checksum: Correct (0x3d2)
+		Checksum: Correct (0x03d2)
 		Sender IP: 92.222.40.41
 		Dest IP: 192.168.1.241
 
@@ -591,7 +591,7 @@ Packet number: 21  Packet Len: 944
 		Header Len (bytes): 20
 		TTL: 46
 		Protocol: TCP
-		Checksum: Correct (0xd93)
+		Checksum: Correct (0x0d93)
 		Sender IP: 92.222.40.41
 		Dest IP: 192.168.1.241
 
@@ -649,7 +649,7 @@ Packet number: 23  Packet Len: 115
 		Header Len (bytes): 20
 		TTL: 46
 		Protocol: TCP
-		Checksum: Correct (0x393)
+		Checksum: Correct (0x0393)
 		Sender IP: 92.222.40.41
 		Dest IP: 192.168.1.241
 
@@ -751,7 +751,7 @@ Packet number: 26  Packet Len: 627
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 256
-		Checksum: Correct (0xa0b)
+		Checksum: Correct (0x0a0b)
 
 Packet number: 27  Packet Len: 54
 
@@ -765,7 +765,7 @@ Packet number: 27  Packet Len: 54
 		Header Len (bytes): 20
 		TTL: 46
 		Protocol: TCP
-		Checksum: Correct (0x3cf)
+		Checksum: Correct (0x03cf)
 		Sender IP: 92.222.40.41
 		Dest IP: 192.168.1.241
 
@@ -1331,7 +1331,7 @@ Packet number: 46  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0x129)
+		Checksum: Correct (0x0129)
 
 Packet number: 47  Packet Len: 1514
 
@@ -1447,7 +1447,7 @@ Packet number: 50  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0xe39)
+		Checksum: Correct (0x0e39)
 
 Packet number: 51  Packet Len: 1514
 
@@ -1606,7 +1606,7 @@ Packet number: 56  Packet Len: 54
 		Header Len (bytes): 20
 		TTL: 46
 		Protocol: TCP
-		Checksum: Correct (0x810)
+		Checksum: Correct (0x0810)
 		Sender IP: 92.222.40.41
 		Dest IP: 192.168.1.241
 
@@ -1635,7 +1635,7 @@ Packet number: 57  Packet Len: 373
 		Header Len (bytes): 20
 		TTL: 46
 		Protocol: TCP
-		Checksum: Correct (0x6d0)
+		Checksum: Correct (0x06d0)
 		Sender IP: 92.222.40.41
 		Dest IP: 192.168.1.241
 
@@ -1911,7 +1911,7 @@ Packet number: 66  Packet Len: 54
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 256
-		Checksum: Correct (0x99a)
+		Checksum: Correct (0x099a)
 
 Packet number: 67  Packet Len: 1514
 
@@ -3042,7 +3042,7 @@ Packet number: 105  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0xb0c)
+		Checksum: Correct (0x0b0c)
 
 Packet number: 106  Packet Len: 1514
 
@@ -3332,7 +3332,7 @@ Packet number: 115  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0xc80)
+		Checksum: Correct (0x0c80)
 
 Packet number: 116  Packet Len: 1514
 
@@ -3796,7 +3796,7 @@ Packet number: 131  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0x823)
+		Checksum: Correct (0x0823)
 
 Packet number: 132  Packet Len: 1514
 
@@ -3825,7 +3825,7 @@ Packet number: 132  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0x1de)
+		Checksum: Correct (0x01de)
 
 Packet number: 133  Packet Len: 1514
 
@@ -3854,7 +3854,7 @@ Packet number: 133  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0xf8a)
+		Checksum: Correct (0x0f8a)
 
 Packet number: 134  Packet Len: 1514
 
@@ -4492,7 +4492,7 @@ Packet number: 155  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0x7fc)
+		Checksum: Correct (0x07fc)
 
 Packet number: 156  Packet Len: 1514
 
@@ -4927,7 +4927,7 @@ Packet number: 170  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0x68c)
+		Checksum: Correct (0x068c)
 
 Packet number: 171  Packet Len: 54
 
@@ -5159,7 +5159,7 @@ Packet number: 178  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0xcca)
+		Checksum: Correct (0x0cca)
 
 Packet number: 179  Packet Len: 54
 
@@ -5246,7 +5246,7 @@ Packet number: 181  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0xb08)
+		Checksum: Correct (0x0b08)
 
 Packet number: 182  Packet Len: 54
 
@@ -5362,7 +5362,7 @@ Packet number: 185  Packet Len: 54
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 256
-		Checksum: Correct (0x850)
+		Checksum: Correct (0x0850)
 
 Packet number: 186  Packet Len: 1514
 
@@ -5391,7 +5391,7 @@ Packet number: 186  Packet Len: 1514
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 166
-		Checksum: Correct (0x865)
+		Checksum: Correct (0x0865)
 
 Packet number: 187  Packet Len: 1514
 
@@ -7073,7 +7073,7 @@ Packet number: 244  Packet Len: 66
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 256
-		Checksum: Correct (0xcc1)
+		Checksum: Correct (0x0cc1)
 
 Packet number: 245  Packet Len: 1514
 
@@ -7363,7 +7363,7 @@ Packet number: 254  Packet Len: 66
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 256
-		Checksum: Correct (0x70d)
+		Checksum: Correct (0x070d)
 
 Packet number: 255  Packet Len: 66
 
@@ -7392,7 +7392,7 @@ Packet number: 255  Packet Len: 66
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 256
-		Checksum: Correct (0x159)
+		Checksum: Correct (0x0159)
 
 Packet number: 256  Packet Len: 66
 
@@ -7754,7 +7754,7 @@ Packet number: 268  Packet Len: 667
 		Header Len (bytes): 20
 		TTL: 46
 		Protocol: TCP
-		Checksum: Correct (0xbd)
+		Checksum: Correct (0x00bd)
 		Sender IP: 92.222.40.41
 		Dest IP: 192.168.1.241
 
@@ -8117,7 +8117,7 @@ Packet number: 280  Packet Len: 66
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 254
-		Checksum: Correct (0xa5e)
+		Checksum: Correct (0x0a5e)
 
 Packet number: 281  Packet Len: 1514
 
@@ -8523,4 +8523,4 @@ Packet number: 294  Packet Len: 66
 		FIN Flag: No
 		ACK Flag: Yes
 		Window Size: 123
-		Checksum: Correct (0xdf8)
+		Checksum: Correct (0x0df8)

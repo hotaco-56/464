@@ -1,0 +1,12 @@
+make; 
+./bin/trace ./test_output/ArpTest.pcap > ./output/Arp.out; 
+./bin/trace ./test_output/Http.pcap > ./output/Http.out;
+./bin/trace ./test_output/IP_bad_checksum.pcap > ./output/IP_bad_checksum.out; 
+./bin/trace ./test_output/largeMix.pcap > ./output/largeMix.out; 
+./bin/trace ./test_output/largeMix2.pcap > ./output/largeMix2.out; 
+./bin/trace ./test_output/mix_withIPoptions.pcap > ./output/mix_withIPoptions.out; 
+./bin/trace ./test_output/PingTest.pcap > ./output/PingTest.out; 
+./bin/trace ./test_output/smallTCP.pcap > ./output/smallTCP.out;
+./bin/trace ./test_output/TCP_bad_checksum.pcap > ./output/TCP_bad_checksum.out;
+./bin/trace ./test_output/UDPfile.pcap > ./output/UPDFile.out; 
+echo "done";
