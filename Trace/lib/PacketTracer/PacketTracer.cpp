@@ -72,6 +72,14 @@ uint16_t getEtherType(const u_char* &data)
 uint16_t getIPType(const u_char* &data)
 {
     printf("\n\tIP Header\n");
+
+    //IP PDU len
+    data += 2;
+    u_char pdu_len[2];
+    memcpy(pdu_len, data, 2);
+    data += 2;
+    printf("\t\tIP PDU Len: %u", ( *((uint16_t*)(pdu_len)) ));
+    
     return 0;
 
 }
