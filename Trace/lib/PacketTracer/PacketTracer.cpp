@@ -3,6 +3,7 @@
 #include <iostream>
 
 uint16_t getEtherType(const u_char*  &data);
+uint16_t getIPType(const u_char* &data);
 void processARP(const u_char* &data);
 
 PacketTracer::PacketTracer() {}
@@ -36,6 +37,8 @@ void PacketTracer::sniffPackets(const char* fname)
             break;
 
         case ETH_P_IP:
+            printf("\t\tType: IP\n");
+            getIPType(data);
             break;
         
         default:
@@ -64,6 +67,13 @@ uint16_t getEtherType(const u_char* &data)
     memcpy(type, data, 2);
     data += 2;
     return ntohs( *((uint16_t*)(type)) );
+}
+
+uint16_t getIPType(const u_char* &data)
+{
+    printf("\n\tIP Header\n");
+    return 0;
+
 }
 
 void processARP(const u_char* &data)
