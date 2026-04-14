@@ -30,7 +30,6 @@ void PacketTracer::sniffPackets(const char* fname)
     struct pcap_pkthdr* header;
 
     uint32_t packetCount = 0;
-    struct tcp_pseudo_hdr tcp_phdr;
     while (pcap_next_ex(packet, &header, &data) != PCAP_ERROR_BREAK) {
         printf("\nPacket number: %d  Packet Len: %u\n",++packetCount,header->len);
 
@@ -43,11 +42,13 @@ void PacketTracer::sniffPackets(const char* fname)
         switch (getEthType())
         {
         case ETH_P_ARP:
-            processARP(ethHeaderEndAddr);
+            processARPHeader(ethHeaderEndAddr);
+            printARPHeader();
             break;
 
         case ETH_P_IP:
             processIPHeader(ethHeaderEndAddr);
+            printIPHeader();
             break;
         
         default:
@@ -80,6 +81,15 @@ void PacketTracer::processIPHeader(const u_char* data)
     ipHeaderEndAddr = data + 20;
 }
 
+void PacketTracer::processARPHeader(const u_char* data)
+{
+    memcpy(arpHeader.opcode, data+6, 2);
+    memcpy(arpHeader.senderMac, data+8, 6);
+    memcpy(arpHeader.senderIP, data+14, 4);
+    memcpy(arpHeader.targetMac, data+18, 6);
+    memcpy(arpHeader.targetIP, data+24, 4);
+}
+
 void PacketTracer::printEthHeader()
 {
     std::cout << "\n\tEthernet Header\n";
@@ -94,84 +104,38 @@ void PacketTracer::printEthHeader()
 
 void PacketTracer::printIPHeader()
 {
-   std::cout << "\n\tIP Header\n";
-   std::cout << "\t\tIP PDU Len: " << getIPPDULen() << std::endl;
-   std::cout << "\t\tHeader Len (bytes): " << getIPHeaderLen() * 4 << std::endl;
-   std::cout << "\t\tTTL: " << getIPTTL() << std::endl;
-   std::cout << "\t\tProtocol: " << getIPProtocol() << std::endl;
+    std::cout << "\n\tIP Header\n";
+    std::cout << "\t\tIP PDU Len: " << getIPPDULen() << std::endl;
+    std::cout << "\t\tHeader Len (bytes): " << getIPHeaderLen() * 4 << std::endl;
+    std::cout << "\t\tTTL: " << (uint16_t)getIPTTL() << std::endl;
+    std::cout << "\t\tProtocol: " << (uint16_t)getIPProtocol() << std::endl;
+    
+    std::cout << "\t\tChecksum: " 
+        << (checkIPHeaderChecksum(ethHeaderEndAddr) ? "Correct ":"Incorrect ") 
+        << std::hex
+        << "(0x" << ntohs(getIPHeaderChecksum()) << ")\n"
+        << std::dec;
 
+}
 
+void PacketTracer::printARPHeader()
+{
+    std::cout << "\n\tARP header\n";
+    std::cout << "\t\tOpcode: " << (getARPOpcode() == 1 ? "Request":"Reply")  << std::endl;
+    std::cout << "\t\tSender MAC: " << getARPSenderMAC() << std::endl;
+    std::cout << "\t\tSender IP: " << getARPSenderIP() << std::endl;
+    std::cout << "\t\tTarget MAC: " << getARPTargetMAC() << std::endl;
+    std::cout << "\t\tTarget IP: " << getARPTargetIP() << std::endl << std::endl;
 }
 
 bool PacketTracer::checkIPHeaderChecksum(const u_char* data)
 {
-    uint16_t received_chksum = *(uint16_t*)(ipHeader.headerChecksum);
+    uint16_t received_chksum = getIPHeaderChecksum(); 
     *(uint16_t*)(data+10) = 0x0000; /*zero checksum*/
-    uint16_t computed_chksum = in_cksum((unsigned short*)(data), getIPHeaderLen());
-
+    uint16_t computed_chksum = in_cksum((unsigned short*)(data), getIPHeaderLen() * 4);
+    
     return (received_chksum == computed_chksum);
-    
 }
-
-// uint16_t getIPType(const u_char* &data, tcp_pseudo_hdr* tcp_phdr)
-// {
-//     printf("\n\tIP Header\n");
-
-//     //IP PDU len
-//     u_char pdu_len[2];
-//     memcpy(pdu_len, data+2, 2);
-//     printf("\t\tIP PDU Len: %u\n",  ntohs( *((uint16_t*)(pdu_len)) ) );
-
-//     //Header Len (bytes)
-//     u_char header_len[1];
-//     memcpy(header_len, data, 1);
-//     uint8_t hdr_bytes = (*(uint8_t*)(header_len) & 0x0F) * 4;
-//     printf("\t\tHeader Len (bytes): %u\n", hdr_bytes);
-
-//     //TTL
-//     u_char ttl[1];
-//     memcpy(ttl, data+8, 1);
-//     printf("\t\tTTL: %u\n", *(uint8_t*)(ttl));
-
-//     //Protocol
-//     u_char protocol[1];
-//     memcpy(protocol, data+9, 1);
-
-//     uint8_t protocol_num = *(uint8_t*)(protocol);
-//     print_protocol(protocol_num);
-
-//     //Checksum
-//     u_char chksum[2];
-//     mempcpy(chksum, data+10, 2);
-
-//     uint16_t actual_chksum = ntohs(*(uint16_t*)(chksum));
-//     *(uint16_t*)(data+10) = 0x0000; /*zero checksum*/
-//     uint16_t computed_chksum = ntohs(in_cksum((unsigned short*)(data), hdr_bytes));
-    
-//     if (actual_chksum == computed_chksum)
-//         printf("\t\tChecksum: Correct (0x%04x)\n", actual_chksum);
-//     else
-//         printf("\t\tChecksum: Incorrect (0x%04x)\n", actual_chksum);
-
-//     //Sender IP
-//     u_char sender_ip[4];
-//     memcpy(sender_ip, data+12, 4);
-//     printf("\t\tSender IP: %s\n", inet_ntoa( *(in_addr*)(sender_ip) ));
-    
-//     //Dest IP
-//     u_char dest_ip[4];
-//     memcpy(dest_ip, data+16, 4);
-//     printf("\t\tDest IP: %s\n", inet_ntoa( *(in_addr*)(dest_ip) ));
-    
-//     data += hdr_bytes;
-//     tcp_phdr->src_addr = *(uint32_t*)(sender_ip);
-//     tcp_phdr->dst_addr = *(uint32_t*)(dest_ip);
-//     tcp_phdr->protocol = protocol_num;
-//     tcp_phdr->zeroes = 0x0000;
-//     tcp_phdr->tcp_len = (ntohs(*(uint16_t*)(pdu_len))) - hdr_bytes;
-
-//     return protocol_num;
-// }
 
 void processARP(const u_char* &data)
 {
@@ -214,10 +178,6 @@ void processARP(const u_char* &data)
     printf("\t\tTarget IP: %s\n\n", inet_ntoa( *(in_addr*)(target_ip) ));
 }
 
-void processICMP(const u_char* &data)
-{
-
-}
 
 // void processTCP(const u_char* &data, tcp_pseudo_hdr* tcp_phdr)
 // {

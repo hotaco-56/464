@@ -1,12 +1,12 @@
 
-Packet Number: 1  Packet Len: 42
+Packet number: 1  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -14,14 +14,14 @@ Packet Number: 1  Packet Len: 42
 		Target IP: 192.168.1.1
 
 
-Packet Number: 2  Packet Len: 60
+Packet number: 2  Packet Len: 60
 
 	Ethernet Header
 		Dest MAC: 0:2:2d:90:75:89
 		Source MAC: 0:6:25:78:c4:7d
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Reply
 		Sender MAC: 0:6:25:78:c4:7d
 		Sender IP: 192.168.1.1
@@ -29,14 +29,14 @@ Packet Number: 2  Packet Len: 60
 		Target IP: 192.168.1.102
 
 
-Packet Number: 3  Packet Len: 42
+Packet number: 3  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -44,14 +44,14 @@ Packet Number: 3  Packet Len: 42
 		Target IP: 192.168.1.4
 
 
-Packet Number: 4  Packet Len: 42
+Packet number: 4  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -59,14 +59,14 @@ Packet Number: 4  Packet Len: 42
 		Target IP: 192.168.1.4
 
 
-Packet Number: 5  Packet Len: 42
+Packet number: 5  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -74,14 +74,14 @@ Packet Number: 5  Packet Len: 42
 		Target IP: 192.168.1.2
 
 
-Packet Number: 6  Packet Len: 42
+Packet number: 6  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -89,14 +89,14 @@ Packet Number: 6  Packet Len: 42
 		Target IP: 192.168.1.2
 
 
-Packet Number: 7  Packet Len: 42
+Packet number: 7  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -104,14 +104,14 @@ Packet Number: 7  Packet Len: 42
 		Target IP: 192.168.1.6
 
 
-Packet Number: 8  Packet Len: 60
+Packet number: 8  Packet Len: 60
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:4:5a:4f:77:21
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:4:5a:4f:77:21
 		Sender IP: 192.168.1.104
@@ -119,14 +119,14 @@ Packet Number: 8  Packet Len: 60
 		Target IP: 192.168.1.1
 
 
-Packet Number: 9  Packet Len: 42
+Packet number: 9  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -134,14 +134,14 @@ Packet Number: 9  Packet Len: 42
 		Target IP: 192.168.1.100
 
 
-Packet Number: 10  Packet Len: 42
+Packet number: 10  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -149,14 +149,14 @@ Packet Number: 10  Packet Len: 42
 		Target IP: 192.168.1.101
 
 
-Packet Number: 11  Packet Len: 42
+Packet number: 11  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -164,14 +164,14 @@ Packet Number: 11  Packet Len: 42
 		Target IP: 192.168.1.1
 
 
-Packet Number: 12  Packet Len: 60
+Packet number: 12  Packet Len: 60
 
 	Ethernet Header
 		Dest MAC: 0:2:2d:90:75:89
 		Source MAC: 0:6:25:78:c4:7d
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Reply
 		Sender MAC: 0:6:25:78:c4:7d
 		Sender IP: 192.168.1.1
@@ -179,14 +179,14 @@ Packet Number: 12  Packet Len: 60
 		Target IP: 192.168.1.102
 
 
-Packet Number: 13  Packet Len: 42
+Packet number: 13  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -194,14 +194,14 @@ Packet Number: 13  Packet Len: 42
 		Target IP: 192.168.1.103
 
 
-Packet Number: 14  Packet Len: 60
+Packet number: 14  Packet Len: 60
 
 	Ethernet Header
 		Dest MAC: 0:2:2d:90:75:89
 		Source MAC: 0:b:7d:9:dc:6
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Reply
 		Sender MAC: 0:b:7d:9:dc:6
 		Sender IP: 192.168.1.103
@@ -209,14 +209,14 @@ Packet Number: 14  Packet Len: 60
 		Target IP: 192.168.1.102
 
 
-Packet Number: 15  Packet Len: 42
+Packet number: 15  Packet Len: 42
 
 	Ethernet Header
 		Dest MAC: ff:ff:ff:ff:ff:ff
 		Source MAC: 0:2:2d:90:75:89
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Request
 		Sender MAC: 0:2:2d:90:75:89
 		Sender IP: 192.168.1.102
@@ -224,14 +224,14 @@ Packet Number: 15  Packet Len: 42
 		Target IP: 192.168.1.104
 
 
-Packet Number: 16  Packet Len: 60
+Packet number: 16  Packet Len: 60
 
 	Ethernet Header
 		Dest MAC: 0:2:2d:90:75:89
 		Source MAC: 0:4:5a:4f:77:21
 		Type: ARP
 
-	ARP Header
+	ARP header
 		Opcode: Reply
 		Sender MAC: 0:4:5a:4f:77:21
 		Sender IP: 192.168.1.104
