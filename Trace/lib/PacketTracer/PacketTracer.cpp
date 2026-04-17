@@ -33,26 +33,26 @@ void PacketTracer::sniffPackets(const char* fname)
         switch (getEthType())
         {
         case ETH_P_ARP:
-            processARPHeader(ethHeaderEndAddr);
+            processARPHeader(_ethHeaderEndAddr);
             printARPHeader();
             break;
 
         case ETH_P_IP:
-            processIPHeader(ethHeaderEndAddr);
+            processIPHeader(_ethHeaderEndAddr);
             printIPHeader();
 
             switch (getIPProtocol())
             {
             case 1:
-                processICMPHeader(ipHeaderEndAddr);
+                processICMPHeader(_ipHeaderEndAddr);
                 printICMPHeader();
                 break;
             case 6:
-                processTCPHeader(ipHeaderEndAddr);
+                processTCPHeader(_ipHeaderEndAddr);
                 printTCPHeader();
                 break;
             case 17:
-                processUDPHeader(ipHeaderEndAddr);
+                processUDPHeader(_ipHeaderEndAddr);
                 printUDPHeader();
                 break;
             
@@ -72,63 +72,63 @@ void PacketTracer::sniffPackets(const char* fname)
 
 void PacketTracer::processEthHeader(const u_char* data)
 {
-    memcpy(ethHeader.dstMac, data, 6);
-    memcpy(ethHeader.srcMac, data+6, 6);
-    memcpy(ethHeader.type, data+12, 2);
+    memcpy(_ethHeader.dstMac, data, 6);
+    memcpy(_ethHeader.srcMac, data+6, 6);
+    memcpy(_ethHeader.type, data+12, 2);
 
-    ethHeaderEndAddr = data + 14;
+    _ethHeaderEndAddr = data + 14;
 }
 
 void PacketTracer::processIPHeader(const u_char* data)
 {
-    memcpy(ipHeader.VER_IHL, data, 1);
-    memcpy(ipHeader.totalLen, data+2, 2);
-    memcpy(ipHeader.ttl, data+8, 1);
-    memcpy(ipHeader.protocol, data+9, 1);
-    memcpy(ipHeader.headerChecksum, data+10, 2);
-    memcpy(ipHeader.srcAddr, data+12, 4);
-    memcpy(ipHeader.dstAddr, data+16, 4);
+    memcpy(_ipHeader.VER_IHL, data, 1);
+    memcpy(_ipHeader.totalLen, data+2, 2);
+    memcpy(_ipHeader.ttl, data+8, 1);
+    memcpy(_ipHeader.protocol, data+9, 1);
+    memcpy(_ipHeader.headerChecksum, data+10, 2);
+    memcpy(_ipHeader.srcAddr, data+12, 4);
+    memcpy(_ipHeader.dstAddr, data+16, 4);
 
-    ipHeaderEndAddr = data + 20 + ((getIPHeaderLen() - 5) * 4);
+    _ipHeaderEndAddr = data + 20 + ((getIPHeaderLen() - 5) * 4);
 }
 
 void PacketTracer::processARPHeader(const u_char* data)
 {
-    memcpy(arpHeader.opcode, data+6, 2);
-    memcpy(arpHeader.senderMac, data+8, 6);
-    memcpy(arpHeader.senderIP, data+14, 4);
-    memcpy(arpHeader.targetMac, data+18, 6);
-    memcpy(arpHeader.targetIP, data+24, 4);
+    memcpy(_arpHeader.opcode, data+6, 2);
+    memcpy(_arpHeader.senderMac, data+8, 6);
+    memcpy(_arpHeader.senderIP, data+14, 4);
+    memcpy(_arpHeader.targetMac, data+18, 6);
+    memcpy(_arpHeader.targetIP, data+24, 4);
 }
 
 void PacketTracer::processTCPHeader(const u_char* data)
 {
-    memcpy(tcpHeader.srcPort, data, sizeof(tcpHeader.srcPort));
-    memcpy(tcpHeader.dstPort, data+2, 2);
-    memcpy(tcpHeader.seqNum, data+4, 4);
-    memcpy(tcpHeader.ackNum, data+8, 4);
-    memcpy(tcpHeader.flags, data+13, 1);
-    memcpy(tcpHeader.winSize, data+14, 2);
-    memcpy(tcpHeader.checksum, data+16, 2);
+    memcpy(_tcpHeader.srcPort, data, sizeof(_tcpHeader.srcPort));
+    memcpy(_tcpHeader.dstPort, data+2, 2);
+    memcpy(_tcpHeader.seqNum, data+4, 4);
+    memcpy(_tcpHeader.ackNum, data+8, 4);
+    memcpy(_tcpHeader.flags, data+13, 1);
+    memcpy(_tcpHeader.winSize, data+14, 2);
+    memcpy(_tcpHeader.checksum, data+16, 2);
 
-    memcpy(tcpPseudoHeader.srcAddr, ipHeader.srcAddr, sizeof(tcpPseudoHeader.srcAddr));
-    memcpy(tcpPseudoHeader.dstAddr, ipHeader.dstAddr, sizeof(tcpPseudoHeader.dstAddr));
-    memset(tcpPseudoHeader.zeroes, 0x00, sizeof(tcpPseudoHeader.zeroes));
-    memcpy(tcpPseudoHeader.protocol, ipHeader.protocol, sizeof(tcpPseudoHeader.protocol));
+    memcpy(_tcpPseudoHeader.srcAddr, _ipHeader.srcAddr, sizeof(_tcpPseudoHeader.srcAddr));
+    memcpy(_tcpPseudoHeader.dstAddr, _ipHeader.dstAddr, sizeof(_tcpPseudoHeader.dstAddr));
+    memset(_tcpPseudoHeader.zeroes, 0x00, sizeof(_tcpPseudoHeader.zeroes));
+    memcpy(_tcpPseudoHeader.protocol, _ipHeader.protocol, sizeof(_tcpPseudoHeader.protocol));
 
     uint16_t tcp_len = htons(getIPPDULen() - (getIPHeaderLen() * 4));
-    memcpy(tcpPseudoHeader.tcpLen, &tcp_len, 2);
+    memcpy(_tcpPseudoHeader.tcpLen, &tcp_len, 2);
 }
 
 void PacketTracer::processUDPHeader(const u_char* data)
 {
-    memcpy(udpHeader.srcPort, data, 2);
-    memcpy(udpHeader.dstPort, data+2, 2);
+    memcpy(_udpHeader.srcPort, data, 2);
+    memcpy(_udpHeader.dstPort, data+2, 2);
 }
 
 void PacketTracer::processICMPHeader(const u_char* data)
 {
-    memcpy(icmpHeader.type, data, 1);
+    memcpy(_icmpHeader.type, data, 1);
 }
 
 void PacketTracer::printUDPHeader()
@@ -157,7 +157,7 @@ void PacketTracer::printIPHeader()
     std::cout << "\t\tHeader Len (bytes): " << getIPHeaderLen() * 4 << std::endl;
     std::cout << "\t\tTTL: " << (uint16_t)getIPTTL() << std::endl;
     std::cout << "\t\tProtocol: " << protocolToAscii((uint16_t)getIPProtocol()) << std::endl;
-    std::cout << "\t\tChecksum: " << (cmpIPHeaderChecksum(ethHeaderEndAddr) ? "Correct ":"Incorrect ");
+    std::cout << "\t\tChecksum: " << (cmpIPHeaderChecksum(_ethHeaderEndAddr) ? "Correct ":"Incorrect ");
     printf("(0x%04x)\n", ntohs(getIPHeaderChecksum()));
     std::cout << "\t\tSender IP: " << getIPSrcAddr() << std::endl;
     std::cout << "\t\tDest IP: " << getIPDstAddr() << std::endl;
@@ -185,7 +185,7 @@ void PacketTracer::printTCPHeader()
     print_tcp_flags(getTCPFlags());
     std::cout << "\t\tWindow Size: " << getTCPWinSize() << std::endl;
 
-    std::cout << "\t\tChecksum: " << (cmpTCPChecksum(ipHeaderEndAddr) ? "Correct ":"Incorrect ");
+    std::cout << "\t\tChecksum: " << (cmpTCPChecksum(_ipHeaderEndAddr) ? "Correct ":"Incorrect ");
     printf("(0x%04x)\n", ntohs(getTCPChecksum()));
 }
 
@@ -206,11 +206,11 @@ void PacketTracer::printICMPHeader()
 bool PacketTracer::cmpTCPChecksum(const u_char* data)
 {
     uint8_t* tcp_phdrStart = (uint8_t*)data - 12;
-    memcpy(tcp_phdrStart, tcpPseudoHeader.srcAddr, 4);
-    memcpy(tcp_phdrStart+4, tcpPseudoHeader.dstAddr, 4);
-    memcpy(tcp_phdrStart+8, tcpPseudoHeader.zeroes, 1);
-    memcpy(tcp_phdrStart+9, tcpPseudoHeader.protocol, 1);
-    memcpy(tcp_phdrStart+10, tcpPseudoHeader.tcpLen, 2);
+    memcpy(tcp_phdrStart, _tcpPseudoHeader.srcAddr, 4);
+    memcpy(tcp_phdrStart+4, _tcpPseudoHeader.dstAddr, 4);
+    memcpy(tcp_phdrStart+8, _tcpPseudoHeader.zeroes, 1);
+    memcpy(tcp_phdrStart+9, _tcpPseudoHeader.protocol, 1);
+    memcpy(tcp_phdrStart+10, _tcpPseudoHeader.tcpLen, 2);
     uint16_t received_chksum = getTCPChecksum();
     *(uint16_t*)(data+16) = 0x0000; /*zero checksum*/
     uint16_t computed_chksum = in_cksum((unsigned short*)(tcp_phdrStart), 12 + getTCPLen());
