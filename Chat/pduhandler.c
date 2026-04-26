@@ -1,19 +1,28 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdint.h>
+#include <arpa/inet.h>
 #include "pduhandler.h"
 
-uint8_t* createPDU(uint8_t* dataBuffer, int lengthOfData) 
+#define HEADER_LEN 3
+
+uint8_t* createPDU(uint8_t* dataBuffer, int lengthOfData, uint8_t flag) 
 {
-    uint8_t* pdu  = (uint8_t*)(malloc(lengthOfData + 2));
+    uint8_t* pdu  = (uint8_t*)(malloc(lengthOfData + HEADER_LEN));
 
     uint16_t header = htons(lengthOfData);
     memcpy(pdu, &header, 2);
-    memcpy(pdu+2, dataBuffer, lengthOfData);
+    memcpy(pdu + 2, &flag, 1);
+    memcpy(pdu+3, dataBuffer, lengthOfData);
     return pdu;
 }
 
-int sendPDU(int clientSocket, uint8_t * dataBuffer, int lengthOfData)
+int sendPDU(int clientSocket, uint8_t * dataBuffer, int lengthOfData, uint8_t flag)
 {
-    uint8_t* pdu = createPDU(dataBuffer, lengthOfData);
-    ssize_t ret = send(clientSocket, pdu, lengthOfData+2, 0);
+    uint8_t* pdu = createPDU(dataBuffer, lengthOfData, flag);
+    ssize_t ret = send(clientSocket, pdu, lengthOfData+HEADER_LEN, 0);
 
     if (ret < 0)
         perror("error");
@@ -22,24 +31,31 @@ int sendPDU(int clientSocket, uint8_t * dataBuffer, int lengthOfData)
     return ret;
 }
 
-int recvPDU(int socketNumber, uint8_t * dataBuffer, int bufferSize)
+int recvPDU(int socketNum, uint8_t *dataBuffer, int maxLen, uint8_t *flag)
 {
-    uint8_t header[2];
-    if (recv(socketNumber, header, 2, MSG_WAITALL) <= 0)
-        return 0;
-
-    uint16_t pduLen;
-    memcpy(&pduLen, header, 2);
-    pduLen = ntohs(pduLen);
-
-    if (pduLen > bufferSize) {
-        perror("pduLen larger than recv bufferSize");
+    uint8_t header[HEADER_LEN];
+    uint16_t messageLen = 0;
+    int bytesRead = 0;
+    
+    bytesRead = recv(socketNum, header, HEADER_LEN, 0);
+    if (bytesRead == 0) {
+        return 0; // Connection closed
+    }
+    
+    memcpy(&messageLen, header, 2);
+    messageLen = ntohs(messageLen); 
+    *flag = header[2];
+    
+    int dataLen = messageLen;
+    if (dataLen > maxLen) {
+        dataLen = maxLen;
+    }
+    
+    // Receive data
+    bytesRead = recv(socketNum, dataBuffer, dataLen, 0);
+    if (bytesRead < 0) {
         return -1;
     }
-    ssize_t ret = recv(socketNumber, dataBuffer, pduLen, MSG_WAITALL);
-
-    if (ret < 0)
-        perror("error");
     
-    return ret;
+    return bytesRead;
 }

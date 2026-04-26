@@ -25,28 +25,55 @@ void recvFromClient(int clientSocket)
     uint8_t dataBuffer[MAXBUF];
     int messageLen = 0;
     uint8_t handleLen = 0;
+    uint8_t flag = 0;
 
-    if ((messageLen = recvPDU(clientSocket, dataBuffer, MAXBUF)) < 0) {
+    if ((messageLen = recvPDU(clientSocket, dataBuffer, MAXBUF, &flag)) < 0) {
         perror("recv call");
         exit(-1);
     }
     if (messageLen > 0) {
-        switch (dataBuffer[0])
+        switch (flag)
         {
-        case PDU_MESSAGE:
+        case FLAG_HANDLE_INITIAL:
         {
-            handleLen = dataBuffer[1];
+            uint8_t handleLen = dataBuffer[0];  
             char handle[MAX_HANDLE_LEN];
-            memcpy(handle, &dataBuffer[2], handleLen);
+            memcpy(handle, &dataBuffer[1], handleLen);  
             handle[handleLen] = '\0';
-            printf("Socket %d: Received message from %s: %s\n", clientSocket, handle, &dataBuffer[2 + handleLen]);
-            int recipientSocket;
-            getClientSocketFromHandle(handle, &recipientSocket);
-            if (recipientSocket < 0) {
-                printf("Handle %s not found, message not sent\n", handle);
-            } else {
-                sendToClient(recipientSocket, &dataBuffer[handleLen + 2], messageLen-handleLen-2); //only send message, not flag or handle
+            printf("Socket %d: Received handle: %s\n", clientSocket, handle);
+            
+            // Check if handle already exists
+            int existingSocket = -1;
+            getClientSocketFromHandle(handle, &existingSocket);
+            
+            if (existingSocket > 0) {
+                sendPDU(clientSocket, NULL, 0, FLAG_HANDLE_ERROR);
+                termClient(clientSocket);
             }
+            else {
+                addClientToTable(clientSocket, handle);
+                sendPDU(clientSocket, NULL, 0, FLAG_HANDLE_ACK);
+                printf("Client socket %d registered with handle: %s\n", clientSocket, handle);
+            }
+            break;
+        }
+        case FLAG_LIST_REQUEST:
+        {
+            printf("received list request\n");
+            uint32_t clientCount = htonl(num_clients);  
+            sendPDU(clientSocket, (uint8_t*)&clientCount, sizeof(uint32_t), FLAG_LIST_COUNT);
+            
+            for (int i = 0; i < num_clients; i++) {
+                printf("sending handle %s\n", clientsTable[i].handle);
+                uint8_t handleLen = strlen(clientsTable[i].handle);
+                uint8_t *msg = malloc(1 + handleLen); 
+                msg[0] = handleLen;
+                memcpy(msg + 1, clientsTable[i].handle, handleLen);
+                sendPDU(clientSocket, msg, 1 + handleLen, FLAG_LIST_HANDLE);
+                free(msg);
+            }
+            
+            sendPDU(clientSocket, NULL, 0, FLAG_LIST_END);  
             break;
         }
         default:
@@ -67,15 +94,4 @@ void getClientSocketFromHandle(char* handle, int* socketNum)
         }
     }
     *socketNum = -1;
-}
-
-void sendToClient(int clientSocket, uint8_t * buffer, int lengthOfData)
-{
-    int sent = 0;
-    sent = sendPDU(clientSocket, buffer, lengthOfData);
-    if (sent < 0) {
-        perror("send call");
-        exit(-1);
-    }
-    printf("Socket %d: Sent, Length: %d msg: %s\n", clientSocket, sent, buffer);
 }

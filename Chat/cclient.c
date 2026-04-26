@@ -40,12 +40,13 @@ typedef struct {
 } ClientArgs;
 
 void sendToServer(int socketNum);
-void sendHandle(int socketNum, char *handle);
+void sendHandleInitial(int socketNum, char *handle);
 void recvFromServer(int socketNum);
 int readFromStdin(uint8_t *buffer);
 void checkClientArgs(int argc, char *argv[], ClientArgs *args);
 void processMessage(int socketNum, int messageLen, uint8_t *dataBuffer);
-void handleMessagePDU(int socketNum, int messageLen, uint8_t *dataBuffer);
+void sendMessagePDU(int socketNum, int messageLen, uint8_t *dataBuffer);
+void sendListPDU(int socketNum);
 void findHandle(char* handle, uint8_t* dataBuffer, int messageLen);
 
 ClientArgs args;
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
     socketNum = tcpClientSetup(args.serverName, args.serverPort, DEBUG_FLAG);
     addToPollSet(socketNum);
     addToPollSet(STDIN_FILENO);
-    sendHandle(socketNum, args.handle);
+    sendHandleInitial(socketNum, args.handle);
     
     while(1) {
         int socket = pollCall(-1);
@@ -74,28 +75,48 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void sendHandle(int socketNum, char *handle)
-{
-    int sent = 0;
-    sent = sendPDU(socketNum, (uint8_t*)handle, strlen(handle));
-    if (sent < 0) {
-        perror("send call");
-        exit(-1);
-    }
-}
 
 void recvFromServer(int socketNum)
 {
     uint8_t dataBuffer[MAXBUF];
     int messageLen = 0;
-    
-    if ((messageLen = recvPDU(socketNum, dataBuffer, MAXBUF)) < 0) {
+    uint8_t flag = 0;
+	uint32_t totalClients = 0;
+	static uint32_t clientsListed = 0;
+
+    if ((messageLen = recvPDU(socketNum, dataBuffer, MAXBUF, &flag)) < 0) {
         perror("recv call");
         exit(EXIT_FAILURE);
     }
 
+
     if (messageLen > 0) {
-        printf("Message Received on Socket %d, length: %d Data: %s\n", socketNum, messageLen, dataBuffer);
+		switch (flag)
+		{
+		case FLAG_MESSAGE:
+		{
+			printf("Message Good From Socket %d, length: %d Data: %s\n", socketNum, messageLen, dataBuffer);
+			break;
+		}
+		case FLAG_LIST_COUNT:
+		{
+			memcpy(&totalClients, dataBuffer, messageLen);
+			printf("Total clients: %d\n", totalClients);
+			break;
+		}
+		case FLAG_LIST_HANDLE:
+		{
+			uint8_t handleLen = dataBuffer[0];
+			printf("handle len: %d", handleLen);
+			char handle[MAX_HANDLE_LEN];
+			memcpy(handle, dataBuffer + 1, handleLen);
+			handle[handleLen] = '\0';  // NULL terminate
+			printf("Handle: %s\n", handle);
+			break;
+		}
+		default:
+			break;
+		}
     } else {
         printf("Server Terminated\n");
         close(socketNum);
@@ -110,6 +131,7 @@ void sendToServer(int socketNum)
     
     sendLen = readFromStdin(buffer);
     processMessage(socketNum, sendLen, buffer);
+	memset(buffer, 0, MAXBUF);
 }
 
 void processMessage(int socketNum, int messageLen, uint8_t *dataBuffer) 
@@ -123,17 +145,27 @@ void processMessage(int socketNum, int messageLen, uint8_t *dataBuffer)
     
     switch(cmd) {
         case 'M':
-            handleMessagePDU(socketNum, messageLen, dataBuffer);
+            sendMessagePDU(socketNum, messageLen, dataBuffer);
             break;
         case 'L':
-			handleListPDU(socketNum);
+			sendListPDU(socketNum);
             break;
         default:
             break;
     }
 }
 
-void handleMessagePDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
+void sendHandleInitial(int socketNum, char *handle)
+{
+    int sent = 0;
+    sent = sendPDU(socketNum, (uint8_t*)handle, strlen(handle), FLAG_HANDLE_INITIAL);
+    if (sent < 0) {
+        perror("send call");
+        exit(-1);
+    }
+}
+
+void sendMessagePDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
 {
     int sent = 0;
     char handle[MAX_HANDLE_LEN];
@@ -149,13 +181,24 @@ void handleMessagePDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
     memcpy(msgPDU + 2, handle, handleLen);
     memcpy(msgPDU + 2 + handleLen, dataBuffer + 3 + handleLen, dataBufferLen - 3 - handleLen);
     
-    sent = sendPDU(socketNum, msgPDU, pduMessageLen);
+    sent = sendPDU(socketNum, msgPDU, pduMessageLen, FLAG_HANDLE_INITIAL);
     if (sent < 0) {
         perror("send call");
         exit(-1);
     }
 
     free(msgPDU);
+}
+
+void sendListPDU(int socketNum)
+{
+	uint8_t sent = 0;
+    
+    sent = sendPDU(socketNum, (uint8_t*)&sent, 1, FLAG_LIST_REQUEST);
+    if (sent < 0) {
+        perror("send call");
+        exit(-1);
+    }
 }
 
 void findHandle(char* handle, uint8_t* dataBuffer, int messageLen)
@@ -180,7 +223,6 @@ int readFromStdin(uint8_t * buffer)
     int inputLen = 0;        
     
     buffer[0] = '\0';
-    printf("Enter data: ");
     while (inputLen < (MAXBUF - 1) && aChar != '\n')
     {
         aChar = getchar();
