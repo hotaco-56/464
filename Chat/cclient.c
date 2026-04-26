@@ -28,21 +28,27 @@
 
 #define MAXBUF 1024
 #define DEBUG_FLAG 1
+#define MAX_HANDLE_LEN 100
+
+typedef struct {
+    char *handle;
+    char *serverName;
+    char *serverPort;
+} ClientArgs;
+
 
 void sendToServer(int socketNum);
 void recvFromServer(int socketNum);
 int readFromStdin(uint8_t * buffer);
-void checkArgs(int argc, char * argv[]);
+void checkClientArgs(int argc, char *argv[], ClientArgs *args);
 
 int main(int argc, char * argv[])
 {
 	int socketNum = 0;         //socket descriptor
-	
-	checkArgs(argc, argv);
-
+	ClientArgs args;
+	checkClientArgs(argc, argv, &args);
 	/* set up the TCP Client socket  */
-	socketNum = tcpClientSetup(argv[1], argv[2], DEBUG_FLAG);
-
+	socketNum = tcpClientSetup(args.serverName, args.serverPort, DEBUG_FLAG);
 	addToPollSet(socketNum);
 	addToPollSet(STDIN_FILENO);
 	
@@ -69,7 +75,7 @@ void recvFromServer(int socketNum)
 	//now get the data from the client_socket
 	if ((messageLen = recvPDU(socketNum, dataBuffer, MAXBUF)) < 0) {
 		perror("recv call");
-		exit(-1);
+		exit(EXIT_FAILURE);
 	}
 
 	if (messageLen > 0) {
@@ -77,15 +83,15 @@ void recvFromServer(int socketNum)
 	} else {
 		printf("Server Terminated\n");
 		close(socketNum);
-		exit(0);
+		exit(EXIT_FAILURE);
 	}
 }
 
 void sendToServer(int socketNum)
 {
-	uint8_t buffer[MAXBUF];   //data buffer
-	int sendLen = 0;        //amount of data to send
-	int sent = 0;            //actual amount of data sent/* get the data and send it   */
+	uint8_t buffer[MAXBUF];  	//data buffer
+	int sendLen = 0;        	//amount of data to send
+	int sent = 0;            	//actual amount of data sent/* get the data and send it   */
 	// int recvBytes = 0;
 	
 	sendLen = readFromStdin(buffer);
@@ -98,11 +104,6 @@ void sendToServer(int socketNum)
 	}
 
 	printf("Socket %d: Sent, Length: %d msg: %s\n", socketNum, sent, buffer);
-	
-	// just for debugging, recv a message from the server to prove it works.
-	// recvBytes = (socketNum, buffer, MAXBUF, 0);
-	// printf("Socket %d: Byte recv: %d message: %s\n", socketNum, recvBytes, buffer);
-	
 }
 
 int readFromStdin(uint8_t * buffer)
@@ -120,6 +121,11 @@ int readFromStdin(uint8_t * buffer)
 		{
 			buffer[inputLen] = aChar;
 			inputLen++;
+			if (inputLen >= (MAXBUF - 1))
+			{
+				printf("Too much input! Max is %d characters\n", MAXBUF - 1);
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 	
@@ -130,12 +136,20 @@ int readFromStdin(uint8_t * buffer)
 	return inputLen;
 }
 
-void checkArgs(int argc, char * argv[])
-{
-	/* check command line arguments  */
-	if (argc != 3)
-	{
-		printf("usage: %s host-name port-number \n", argv[0]);
-		exit(1);
-	}
+void checkClientArgs(int argc, char *argv[], ClientArgs *args) {
+    size_t handleLen;
+
+    if (argc != 4) {
+        fprintf(stderr, "Usage: %s handle server-name server-port\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    handleLen = strlen(argv[1]);
+    if (handleLen > MAX_HANDLE_LEN) {
+        fprintf(stderr, "Invalid handle, handle longer than 100 characters: %s\n", argv[1]);
+        exit(EXIT_FAILURE);
+    }
+    args->handle = argv[1];
+    args->serverName = argv[2];
+    args->serverPort = argv[3];
 }

@@ -29,22 +29,25 @@
 #define MAXBUF 1024
 #define DEBUG_FLAG 1
 
-void recvFromClient(int clientSocket);
-int checkArgs(int argc, char *argv[]);
-void termClient(int clientSocket);
+typedef struct {
+    char *port;
+} ServerArgs;
 
+void recvFromClient(int clientSocket);
+void checkServerArgs(int argc, char *argv[], ServerArgs *args);
+void termClient(int clientSocket);
 void addNewServerSocket(int mainServerSocket) { addToPollSet(tcpAccept(mainServerSocket, DEBUG_FLAG)); }
 
 int main(int argc, char *argv[])
 {
 	int mainServerSocket = 0;   //socket descriptor for the server socket
 	int clientSocket = 0;   //socket descriptor for the client socket
-	int portNumber = 0;
 	
-	portNumber = checkArgs(argc, argv);
+	ServerArgs args;
+	checkServerArgs(argc, argv, &args);
 	
 	//create the server socket
-	mainServerSocket = tcpServerSetup(portNumber);
+	mainServerSocket = tcpServerSetup(args.port);
 
 	addToPollSet(mainServerSocket);
 
@@ -96,23 +99,16 @@ void termClient(int clientSocket) {
 	close(clientSocket);
 }
 
+void checkServerArgs(int argc, char *argv[], ServerArgs *args) {
+    if (argc == 1) {
+        args->port = 0;
+        return;
+    }
 
-int checkArgs(int argc, char *argv[])
-{
-	// Checks args and returns port number
-	int portNumber = 0;
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s [port-number]\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
 
-	if (argc > 2)
-	{
-		fprintf(stderr, "Usage %s [optional port number]\n", argv[0]);
-		exit(-1);
-	}
-	
-	if (argc == 2)
-	{
-		portNumber = atoi(argv[1]);
-	}
-	
-	return portNumber;
+    args->port = argv[1];
 }
-
