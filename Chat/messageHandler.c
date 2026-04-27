@@ -24,7 +24,6 @@ void recvFromClient(int clientSocket)
 {
     uint8_t dataBuffer[MAXBUF];
     int messageLen = 0;
-    uint8_t handleLen = 0;
     uint8_t flag = 0;
 
     if ((messageLen = recvPDU(clientSocket, dataBuffer, MAXBUF, &flag)) < 0) {
@@ -38,7 +37,7 @@ void recvFromClient(int clientSocket)
         {
             uint8_t handleLen = dataBuffer[0];  
             char handle[MAX_HANDLE_LEN];
-            memcpy(handle, &dataBuffer[1], handleLen);  
+            memcpy(handle, dataBuffer + 1, handleLen);  
             handle[handleLen] = '\0';
             printf("Socket %d: Received handle: %s\n", clientSocket, handle);
             
@@ -55,6 +54,19 @@ void recvFromClient(int clientSocket)
                 sendPDU(clientSocket, NULL, 0, FLAG_HANDLE_ACK);
                 printf("Client socket %d registered with handle: %s\n", clientSocket, handle);
             }
+            break;
+        }
+        case FLAG_MESSAGE:
+        {
+            int receiverSocket = 0;
+            uint8_t handleLen = dataBuffer[0];
+            char handle[MAX_HANDLE_LEN];
+            memcpy(handle, &dataBuffer[1], handleLen);
+            handle[handleLen] = '\0';
+
+            getClientSocketFromHandle(handle, &receiverSocket);
+
+            sendPDU(receiverSocket, dataBuffer + handleLen + 2, messageLen - handleLen - 2, FLAG_MESSAGE);
             break;
         }
         case FLAG_LIST_REQUEST:

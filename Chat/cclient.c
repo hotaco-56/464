@@ -82,7 +82,6 @@ void recvFromServer(int socketNum)
     int messageLen = 0;
     uint8_t flag = 0;
 	uint32_t totalClients = 0;
-	static uint32_t clientsListed = 0;
 
     if ((messageLen = recvPDU(socketNum, dataBuffer, MAXBUF, &flag)) < 0) {
         perror("recv call");
@@ -158,7 +157,11 @@ void processMessage(int socketNum, int messageLen, uint8_t *dataBuffer)
 void sendHandleInitial(int socketNum, char *handle)
 {
     int sent = 0;
-    sent = sendPDU(socketNum, (uint8_t*)handle, strlen(handle), FLAG_HANDLE_INITIAL);
+    uint8_t pdu[MAX_HANDLE_LEN];
+    memcpy(pdu, handle, strlen(handle));
+    pdu[strlen(handle)] = '\0';
+    
+    sent = sendPDU(socketNum, pdu, strlen(handle) + 1, FLAG_HANDLE_INITIAL);
     if (sent < 0) {
         perror("send call");
         exit(-1);
@@ -172,16 +175,15 @@ void sendMessagePDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
     findHandle(handle, dataBuffer, dataBufferLen);
     
     size_t handleLen = strlen(handle);
-	uint8_t pduMessageLen = 1 + 1 + handleLen + dataBufferLen;
+	uint8_t pduMessageLen = 1 + handleLen + dataBufferLen;
     uint8_t *msgPDU = malloc(pduMessageLen);
     
 	//send flag,handleLen, handle, and message in pdu
-    msgPDU[0] = PDU_MESSAGE;
-    msgPDU[1] = handleLen;
-    memcpy(msgPDU + 2, handle, handleLen);
-    memcpy(msgPDU + 2 + handleLen, dataBuffer + 3 + handleLen, dataBufferLen - 3 - handleLen);
+    msgPDU[0] = handleLen;
+    memcpy(msgPDU + 1, handle, handleLen);
+    memcpy(msgPDU + 1 + handleLen, dataBuffer + 2 + handleLen, dataBufferLen - 2 - handleLen);
     
-    sent = sendPDU(socketNum, msgPDU, pduMessageLen, FLAG_HANDLE_INITIAL);
+    sent = sendPDU(socketNum, msgPDU, pduMessageLen, FLAG_MESSAGE);
     if (sent < 0) {
         perror("send call");
         exit(-1);
