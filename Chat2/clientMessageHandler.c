@@ -10,6 +10,50 @@
 #include "ctype.h"
 #include "messageFlags.h"
 
+#define DEBUG
+
+void findHandle(char* handle, uint8_t* dataBuffer, int messageLen);
+void sendMessagePDU(int socketNum, int messageLen, uint8_t *dataBuffer);
+void sendListPDU(int socketNum);
+
+void sendToServer(int socketNum, uint8_t * dataBuffer, int messageLen)
+{
+    if (dataBuffer[0] != '%') {
+        printf("usage: %%msgType message\n");
+        return;
+    }
+        
+    int cmd = toupper((int)dataBuffer[1]);
+    
+    switch(cmd) {
+        case 'M':
+            sendMessagePDU(socketNum, messageLen, dataBuffer);
+            break;
+        case 'L':
+			sendListPDU(socketNum);
+            break;
+        case 'C':
+            break;
+        default:
+            break;
+    }
+}
+
+void sendHandleInitial(int socketNum, char *handle)
+{
+    int sent = 0;
+    uint8_t pdu[MAX_HANDLE_LEN];
+    uint8_t handleLen = strlen(handle);  // Changed from sizeof(handle)
+    pdu[0] = handleLen;
+    memcpy(pdu + 1, handle, handleLen);
+    
+    sent = sendPDU(socketNum, pdu, handleLen + 1, FLAG_HANDLE_INITIAL);
+    if (sent < 0) {
+        perror("send call");
+        exit(-1);
+    }
+}
+
 void sendMessagePDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
 {
     int sent = 0;
@@ -58,13 +102,13 @@ void recvFromServer(int socketNum)
         exit(EXIT_FAILURE);
     }
 
-
     if (messageLen > 0) {
 		switch (flag)
 		{
 		case FLAG_MESSAGE:
 		{
-			printf("Message Good From Socket %d, length: %d Data: %s\n", socketNum, messageLen, dataBuffer);
+            printf("received message\n");
+			printf("Messge from Socket %d, length: %d Data: %s\n", socketNum, messageLen, dataBuffer);
 			break;
 		}
 		case FLAG_LIST_COUNT:
@@ -83,6 +127,13 @@ void recvFromServer(int socketNum)
 			printf("Handle: %s\n", handle);
 			break;
 		}
+        case FLAG_HANDLE_ACK:
+        {
+            #ifdef DEBUG
+            printf("received handle initalization ack");
+            #endif
+            break;
+        }
 		default:
 			break;
 		}

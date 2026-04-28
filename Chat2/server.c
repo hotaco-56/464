@@ -27,12 +27,8 @@ void checkServerArgs(int argc, char *argv[], char **port);
 void addNewServerSocket(int mainServerSocket) 
 { 
     int clientSocket = tcpAccept(mainServerSocket, DEBUG_FLAG);
-	char handle_flag[MAX_HANDLE_LEN];
-	uint8_t flag;
-	recvPDU(clientSocket, (uint8_t*)handle_flag, MAX_HANDLE_LEN, &flag); //ignore the flag
-	printf("New client connected with handle: %s\n", handle_flag);
-    addToPollSet(clientSocket);
-    addClientToTable(clientSocket, handle_flag);
+    recvFromClient(clientSocket);
+	// recvPDU(clientSocket, (uint8_t*)handle_flag, MAX_HANDLE_LEN, &flag); //ignore the flag
 }
 
 int main(int argc, char *argv[])
@@ -42,7 +38,7 @@ int main(int argc, char *argv[])
     
     checkServerArgs(argc, argv, &port);
 
-    clientsTable = (ClientInfo*)malloc(sizeof(ClientInfo) * 100);
+    clientsTable = (ClientInfo*)malloc(sizeof(ClientInfo) * 10);
     
     mainServerSocket = tcpServerSetup(strtol(port, NULL, 10));
     addToPollSet(mainServerSocket);

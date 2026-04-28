@@ -10,6 +10,8 @@
 #include "ctype.h"
 #include "messageFlags.h"
 
+#define DEBUG_FLAG 1
+
 void termClient(int clientSocket) 
 {
     removeFromPollSet(clientSocket);
@@ -40,6 +42,8 @@ void recvFromClient(int clientSocket)
             memcpy(handle, dataBuffer + 1, handleLen);  
             handle[handleLen] = '\0';
             printf("Socket %d: Received handle: %s\n", clientSocket, handle);
+
+            addToPollSet(clientSocket);
             
             // Check if handle already exists
             int existingSocket = -1;
@@ -51,8 +55,8 @@ void recvFromClient(int clientSocket)
             }
             else {
                 addClientToTable(clientSocket, handle);
-                sendPDU(clientSocket, NULL, 0, FLAG_HANDLE_ACK);
-                printf("Client socket %d registered with handle: %s\n", clientSocket, handle);
+                // sendPDU(clientSocket, NULL, 0, FLAG_HANDLE_ACK);
+                printf("Client socket %d registered with handle: %s\n", clientSocket, clientsTable[num_clients - 1].handle);
             }
             break;
         }
@@ -63,14 +67,26 @@ void recvFromClient(int clientSocket)
             char handle[MAX_HANDLE_LEN];
             memcpy(handle, &dataBuffer[1], handleLen);
             handle[handleLen] = '\0';
+            handleLen += 1; //accounting for space
+
+            uint8_t msgOffset = handleLen + 1;
+
             printf("Received message for handle: %s\n", handle);
-            printf("Message content: %s\n", dataBuffer + 1 + handleLen);
+            printf("total buffer: %s\n", dataBuffer);
+            printf("Message content: %s\n", dataBuffer + msgOffset);
+
+            uint8_t *msgData = dataBuffer + msgOffset; //this accounts for +1 flag
+            uint8_t msgSize = messageLen - msgOffset;
 
             getClientSocketFromHandle(handle, &receiverSocket);
 
+            printf("Handle is socket %d\n", receiverSocket);
+
             if (receiverSocket > 0) {
-                sendPDU(receiverSocket, dataBuffer + 1 + handleLen, messageLen - handleLen - 1, FLAG_MESSAGE);
+                printf("Sending Message to %s\n: %s", handle, msgData);
+                sendPDU(receiverSocket, msgData, msgSize, FLAG_MESSAGE);
             } else {
+                printf("handle not found\n");
                 sendPDU(clientSocket, NULL, 0, FLAG_MESSAGE_ERROR);
             }
             break;
@@ -103,13 +119,3 @@ void recvFromClient(int clientSocket)
     }
 }
 
-void getClientSocketFromHandle(char* handle, int* socketNum) 
-{
-    for (uint16_t i = 0; i < num_clients; i++) {
-        if (strcmp(clientsTable[i].handle, handle) == 0) {
-            *socketNum = clientsTable[i].socketNum;
-            return;
-        }
-    }
-    *socketNum = -1;
-}

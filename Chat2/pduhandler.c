@@ -7,17 +7,30 @@
 #include "pduhandler.h"
 
 #define HEADER_LEN 3
+#define DEBUG
 
 uint8_t* createPDU(uint8_t* dataBuffer, int lengthOfData, uint8_t flag) 
 {
-    uint8_t* pdu  = (uint8_t*)(malloc(lengthOfData + HEADER_LEN));
+    uint8_t *pdu;
+    uint16_t header;
+    if (lengthOfData == 0 && dataBuffer == NULL) {// create empty packet
+        pdu  = (uint8_t*)(malloc(1 + HEADER_LEN));
+        header = htons(lengthOfData);
+        memcpy(pdu, &header, 2);
+        memcpy(pdu + 2, &flag, 1);
+    }
+    else {
+        pdu  = (uint8_t*)(malloc(lengthOfData + HEADER_LEN));
+        header = htons(lengthOfData);
+        memcpy(pdu, &header, 2);
+        memcpy(pdu + 2, &flag, 1);
+    }
 
-
-    uint16_t header = htons(lengthOfData);
-    memcpy(pdu, &header, 2);
-    memcpy(pdu + 2, &flag, 1);
     if (dataBuffer == NULL) {
-        memset(pdu + 3, 0, lengthOfData);
+        #ifdef DEBUG
+        printf("null packet flag: %d\n", flag);
+        #endif
+        return pdu;
     } else {
         memcpy(pdu+3, dataBuffer, lengthOfData);
     }

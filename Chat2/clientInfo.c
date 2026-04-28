@@ -1,23 +1,37 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdint.h>
 #include "clientInfo.h"
 
 ClientInfo *clientsTable;
-volatile uint32_t num_clients = 0;
-static uint32_t capacity = 100;
+uint32_t num_clients = 0;
 
 void addClientToTable(int socketNum, char* handle)
 {
-    // If table is full, double the capacity
-    if (num_clients >= capacity) {
-        capacity = (capacity == 0) ? 10 : capacity * 2;
-        clientsTable = realloc(clientsTable, capacity * sizeof(ClientInfo));
-    }
+    printf("adding client %s on socket %d to client table\n", handle, socketNum);
+    // if (num_clients >= capacity) {
+    //     clientsTable = realloc(clientsTable, capacity * sizeof(ClientInfo));
+    //     capacity += capacity;
+    // }
     
     clientsTable[num_clients].socketNum = socketNum;
     strcpy(clientsTable[num_clients].handle, handle);
     num_clients++;
+}
+
+void getClientSocketFromHandle(char* handle, int* socketNum) 
+{
+    *socketNum = -1;
+
+    printf("looking for handle: %s\n", handle);
+    for (uint16_t i = 0; i < num_clients; i++) {
+        printf("%s\n", clientsTable[i].handle);
+        if (strcmp(clientsTable[i].handle, handle) == 0) {
+            *socketNum = clientsTable[i].socketNum;
+            return;
+        }
+    }
 }
 
 void removeClientFromTable(int socketNum)

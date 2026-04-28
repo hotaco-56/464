@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+void sendHandleInitial(int socketNum, char *handle);
 void sendToServer(int clientSocket, uint8_t * buffer, int lengthOfData);
 void recvFromServer(int clientSocket);
 

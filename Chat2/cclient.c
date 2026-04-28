@@ -39,10 +39,6 @@ typedef struct {
 
 int readFromStdin(uint8_t *buffer);
 void checkClientArgs(int argc, char *argv[], ClientArgs *args);
-void processMessage(int socketNum, int messageLen, uint8_t *dataBuffer);
-void sendMessagePDU(int socketNum, int messageLen, uint8_t *dataBuffer);
-void sendListPDU(int socketNum);
-void findHandle(char* handle, uint8_t* dataBuffer, int messageLen);
 
 ClientArgs args;
 
@@ -50,61 +46,28 @@ int main(int argc, char *argv[])
 {
     int socketNum = 0;
     checkClientArgs(argc, argv, &args);
-
     socketNum = tcpClientSetup(args.serverName, args.serverPort, DEBUG_FLAG);
     addToPollSet(socketNum);
     addToPollSet(STDIN_FILENO);
+
     sendHandleInitial(socketNum, args.handle);
     
     while(1) {
         int socket = pollCall(-1);
         if (socket == STDIN_FILENO) {
-            sendToServer(socketNum);
+            uint8_t buffer[MAXBUF];
+            int sendLen = 0;
+            sendLen = readFromStdin(buffer);
+            sendToServer(socketNum, buffer, sendLen);
+            memset(buffer, 0, MAXBUF);
         }
         else {
             recvFromServer(socketNum);
         }
     }
-    
     close(socketNum);
     
     return 0;
-}
-
-void processMessage(int socketNum, int messageLen, uint8_t *dataBuffer) 
-{
-    if (dataBuffer[0] != '%') {
-        printf("usage: %%msgType message\n");
-        return;
-    }
-        
-    int cmd = toupper((int)dataBuffer[1]);
-    
-    switch(cmd) {
-        case 'M':
-            sendMessagePDU(socketNum, messageLen, dataBuffer);
-            break;
-        case 'L':
-			sendListPDU(socketNum);
-            break;
-        default:
-            break;
-    }
-}
-
-void sendHandleInitial(int socketNum, char *handle)
-{
-    int sent = 0;
-    uint8_t pdu[MAX_HANDLE_LEN];
-    uint8_t handleLen = strlen(handle);
-    pdu[0] = handleLen;
-    memcpy(pdu + 1, handle, handleLen);
-    
-    sent = sendPDU(socketNum, pdu, handleLen + 1, FLAG_HANDLE_INITIAL);
-    if (sent < 0) {
-        perror("send call");
-        exit(-1);
-    }
 }
 
 int readFromStdin(uint8_t * buffer)
