@@ -14,7 +14,7 @@ typedef struct
 } ClientInfo;
 
 extern ClientInfo *clientsTable;
-extern uint32_t num_clients;
+extern volatile uint32_t num_clients;
 
 void addClientToTable(int socketNum, char *handle);
 void removeClientFromTable(int socketNum);

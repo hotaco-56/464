@@ -63,17 +63,19 @@ void recvFromClient(int clientSocket)
             char handle[MAX_HANDLE_LEN];
             memcpy(handle, &dataBuffer[1], handleLen);
             handle[handleLen] = '\0';
+            printf("Received message for handle: %s\n", handle);
+            printf("Message content: %s\n", dataBuffer + handleLen + 1);
 
             getClientSocketFromHandle(handle, &receiverSocket);
 
-            sendPDU(receiverSocket, dataBuffer + handleLen + 2, messageLen - handleLen - 2, FLAG_MESSAGE);
+            sendPDU(receiverSocket, dataBuffer + handleLen + 2, messageLen - handleLen, FLAG_MESSAGE);
             break;
         }
         case FLAG_LIST_REQUEST:
         {
             printf("received list request\n");
-            uint32_t clientCount = htonl(num_clients);  
-            sendPDU(clientSocket, (uint8_t*)&clientCount, sizeof(uint32_t), FLAG_LIST_COUNT);
+            uint32_t clientCount = num_clients;  
+            sendPDU(clientSocket, (uint8_t*)&clientCount, sizeof(clientCount), FLAG_LIST_COUNT);
             
             for (int i = 0; i < num_clients; i++) {
                 printf("sending handle %s\n", clientsTable[i].handle);

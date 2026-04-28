@@ -175,13 +175,13 @@ void sendMessagePDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
     findHandle(handle, dataBuffer, dataBufferLen);
     
     size_t handleLen = strlen(handle);
-	uint8_t pduMessageLen = 1 + handleLen + dataBufferLen;
+	uint8_t pduMessageLen = dataBufferLen + handleLen + 1;
     uint8_t *msgPDU = malloc(pduMessageLen);
     
-	//send flag,handleLen, handle, and message in pdu
+	//send handleLen, handle, and message in pdu
     msgPDU[0] = handleLen;
     memcpy(msgPDU + 1, handle, handleLen);
-    memcpy(msgPDU + 1 + handleLen, dataBuffer + 2 + handleLen, dataBufferLen - 2 - handleLen);
+    memcpy(msgPDU + 1 + handleLen, dataBuffer + 3 + handleLen, dataBufferLen - 3 - handleLen);
     
     sent = sendPDU(socketNum, msgPDU, pduMessageLen, FLAG_MESSAGE);
     if (sent < 0) {

@@ -4,10 +4,17 @@
 #include "clientInfo.h"
 
 ClientInfo *clientsTable;
-uint32_t num_clients = 0;
+volatile uint32_t num_clients = 0;
+static uint32_t capacity = 100;
 
 void addClientToTable(int socketNum, char* handle)
 {
+    // If table is full, double the capacity
+    if (num_clients >= capacity) {
+        capacity = (capacity == 0) ? 10 : capacity * 2;
+        clientsTable = realloc(clientsTable, capacity * sizeof(ClientInfo));
+    }
+    
     clientsTable[num_clients].socketNum = socketNum;
     strcpy(clientsTable[num_clients].handle, handle);
     num_clients++;
