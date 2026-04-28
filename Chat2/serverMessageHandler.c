@@ -3,15 +3,12 @@
 #include <string.h>
 #include <stdint.h>
 #include <unistd.h>
-#include "messageHandler.h"
+#include "serverMessageHandler.h"
 #include "clientInfo.h"
 #include "pduhandler.h"
 #include "pollLib.h"
 #include "ctype.h"
 #include "messageFlags.h"
-
-#define MAXBUF 1024
-#define PDU_MESSAGE 1
 
 void termClient(int clientSocket) 
 {
