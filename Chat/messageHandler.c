@@ -30,6 +30,9 @@ void recvFromClient(int clientSocket)
         perror("recv call");
         exit(-1);
     }
+
+    printf("Received data from client socket %d, message length: %d, flag: %d\n", clientSocket, messageLen, flag);
+
     if (messageLen > 0) {
         switch (flag)
         {
