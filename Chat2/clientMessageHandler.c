@@ -83,7 +83,7 @@ void sendListPDU(int socketNum)
 {
     int sent = 0;
     
-    sent = sendPDU(socketNum, NULL, 0, FLAG_LIST_REQUEST);
+    sent = sendPDU(socketNum, NULL, 1, FLAG_LIST_REQUEST);
     if (sent < 0) {
         perror("send call");
         exit(-1);
@@ -107,7 +107,6 @@ void recvFromServer(int socketNum)
 		{
 		case FLAG_MESSAGE:
 		{
-            printf("received message\n");
 			printf("Messge from Socket %d, length: %d Data: %s\n", socketNum, messageLen, dataBuffer);
 			break;
 		}
@@ -120,17 +119,23 @@ void recvFromServer(int socketNum)
 		case FLAG_LIST_HANDLE:
 		{
 			uint8_t handleLen = dataBuffer[0];
-			printf("handle len: %d", handleLen);
 			char handle[MAX_HANDLE_LEN];
 			memcpy(handle, dataBuffer + 1, handleLen);
 			handle[handleLen] = '\0';  // NULL terminate
 			printf("Handle: %s\n", handle);
 			break;
 		}
+        case FLAG_LIST_END:
+        {
+            #ifdef DEBUG
+            printf("list end flag received\n");
+            #endif
+            break;
+        }
         case FLAG_HANDLE_ACK:
         {
             #ifdef DEBUG
-            printf("received handle initalization ack");
+            printf("received handle initalization ack\n");
             #endif
             break;
         }
@@ -158,4 +163,9 @@ void findHandle(char* handle, uint8_t* dataBuffer, int messageLen)
         handle[handleIndex++] = dataBuffer[i++];
     }
     handle[handleIndex] = '\0';
+}
+
+void findHandles()
+{
+
 }

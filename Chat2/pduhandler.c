@@ -13,27 +13,22 @@ uint8_t* createPDU(uint8_t* dataBuffer, int lengthOfData, uint8_t flag)
 {
     uint8_t *pdu;
     uint16_t header;
-    if (lengthOfData == 0 && dataBuffer == NULL) {// create empty packet
-        pdu  = (uint8_t*)(malloc(1 + HEADER_LEN));
+    if (dataBuffer == NULL) {// create empty packet
+        printf("sending null packet flag: %d\n", flag);
+        pdu  = (uint8_t*)(malloc(lengthOfData + HEADER_LEN));
         header = htons(lengthOfData);
         memcpy(pdu, &header, 2);
         memcpy(pdu + 2, &flag, 1);
+        memset(pdu + 3, 0, 1);
     }
     else {
         pdu  = (uint8_t*)(malloc(lengthOfData + HEADER_LEN));
         header = htons(lengthOfData);
         memcpy(pdu, &header, 2);
         memcpy(pdu + 2, &flag, 1);
-    }
-
-    if (dataBuffer == NULL) {
-        #ifdef DEBUG
-        printf("null packet flag: %d\n", flag);
-        #endif
-        return pdu;
-    } else {
         memcpy(pdu+3, dataBuffer, lengthOfData);
     }
+
     return pdu;
 }
 

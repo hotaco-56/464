@@ -50,12 +50,12 @@ void recvFromClient(int clientSocket)
             getClientSocketFromHandle(handle, &existingSocket);
             
             if (existingSocket > 0) {
-                sendPDU(clientSocket, NULL, 0, FLAG_HANDLE_ERROR);
+                sendPDU(clientSocket, NULL, 1, FLAG_HANDLE_ERROR);
                 termClient(clientSocket);
             }
             else {
                 addClientToTable(clientSocket, handle);
-                // sendPDU(clientSocket, NULL, 0, FLAG_HANDLE_ACK);
+                sendPDU(clientSocket, NULL, 1, FLAG_HANDLE_ACK);
                 printf("Client socket %d registered with handle: %s\n", clientSocket, clientsTable[num_clients - 1].handle);
             }
             break;
@@ -87,7 +87,7 @@ void recvFromClient(int clientSocket)
                 sendPDU(receiverSocket, msgData, msgSize, FLAG_MESSAGE);
             } else {
                 printf("handle not found\n");
-                sendPDU(clientSocket, NULL, 0, FLAG_MESSAGE_ERROR);
+                sendPDU(clientSocket, NULL, 1, FLAG_MESSAGE_ERROR);
             }
             break;
         }
@@ -107,7 +107,7 @@ void recvFromClient(int clientSocket)
                 free(msg);
             }
             
-            sendPDU(clientSocket, NULL, 0, FLAG_LIST_END);  
+            sendPDU(clientSocket, NULL, 1, FLAG_LIST_END);  
             break;
         }
         default:
