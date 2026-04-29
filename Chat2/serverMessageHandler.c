@@ -110,6 +110,53 @@ void recvFromClient(int clientSocket)
             sendPDU(clientSocket, NULL, 1, FLAG_LIST_END);  
             break;
         }
+        case FLAG_MULTICAST:
+        {
+            printf("recevied multicast request\n");
+            uint8_t multicastHosts = dataBuffer[0];
+            printf("multicast hosts: %d\n", multicastHosts);
+
+            //find msg
+            uint8_t *msgPtr = dataBuffer;
+            uint8_t handleLen = 0;
+            for (int i = 0; i < multicastHosts; i++) {
+                handleLen = dataBuffer[i + handleLen + 1];
+                msgPtr += 1 + handleLen;
+            }
+
+            //send to hosts
+            handleLen = 0;
+            uint8_t *handlePtr = dataBuffer + 1;
+            for (int i = 0; i < multicastHosts; i++) {
+                char handle[MAX_HANDLE_LEN];
+                memset(handle, 0, MAX_HANDLE_LEN);
+                handleLen = dataBuffer[i + handleLen + 1];
+                printf("handle len: %d\n", handleLen);
+
+                memcpy(handle, handlePtr + 1, handleLen);
+
+                handle[handleLen] = '\0';
+                printf("handle: %s\n", handle);
+
+                int socketNum = 0;
+                getClientSocketFromHandle(handle, &socketNum);
+
+                if (socketNum > 0) {
+                    printf("Sending Message to %s\n: %s", handle, msgPtr);
+                    sendPDU(socketNum, msgPtr + 1, msgPtr - 1 - dataBuffer, FLAG_MESSAGE);
+                } else {
+                    printf("handle not found\n");
+                    sendPDU(clientSocket, NULL, 1, FLAG_MESSAGE_ERROR);
+                }
+
+                handlePtr += handleLen + 1;
+            }
+            break;
+        }
+        case FLAG_BROADCAST:
+        {
+            break;
+        }
         default:
             break;
         }

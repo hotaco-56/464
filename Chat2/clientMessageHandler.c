@@ -15,6 +15,7 @@
 void findHandle(char* handle, uint8_t* dataBuffer, int messageLen);
 void sendMessagePDU(int socketNum, int messageLen, uint8_t *dataBuffer);
 void sendListPDU(int socketNum);
+void sendMulticastPDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer);
 
 void sendToServer(int socketNum, uint8_t * dataBuffer, int messageLen)
 {
@@ -33,6 +34,10 @@ void sendToServer(int socketNum, uint8_t * dataBuffer, int messageLen)
 			sendListPDU(socketNum);
             break;
         case 'C':
+            sendMulticastPDU(socketNum, messageLen, dataBuffer);
+            break;
+        case 'B':
+            // sendBroadcastPDU(socketNum, messageLen, dataBuffer);
             break;
         default:
             break;
@@ -61,18 +66,19 @@ void sendMessagePDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
     findHandle(handle, dataBuffer, dataBufferLen);
     
     size_t handleLen = strlen(handle);
-    int messageLen = dataBufferLen - 3 - handleLen;
-    uint8_t pduMessageLen = messageLen + handleLen + 1;
+    int messageLen = dataBufferLen - 3 - handleLen + 1;
+
+    uint8_t pduMessageLen = messageLen + handleLen;
     uint8_t *msgPDU = malloc(pduMessageLen);
     
     //send handleLen, handle, and message in pdu
     msgPDU[0] = handleLen;
     memcpy(msgPDU + 1, handle, handleLen);
+
     memcpy(msgPDU + 1 + handleLen, dataBuffer + 3 + handleLen, messageLen);
     
     sent = sendPDU(socketNum, msgPDU, pduMessageLen, FLAG_MESSAGE);
     if (sent < 0) {
-        perror("send call");
         exit(-1);
     }
 
@@ -85,9 +91,59 @@ void sendListPDU(int socketNum)
     
     sent = sendPDU(socketNum, NULL, 1, FLAG_LIST_REQUEST);
     if (sent < 0) {
-        perror("send call");
         exit(-1);
     }
+}
+
+void sendMulticastPDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
+{
+    int sent = 0;
+    uint8_t numHosts;
+    
+    numHosts = strtol((char*)(dataBuffer + 3), NULL, 10);
+
+    uint8_t pduMessageLen = dataBufferLen - 4 - numHosts + 1;
+    uint8_t *msgPDU = malloc(pduMessageLen);
+
+    printf("numhosts in msg: %d\n", numHosts);
+
+    int bufferPos = 0;
+    int msgPDUPos = 0;
+    msgPDU[0] = numHosts;
+    // msgPDU[0] = '7';
+    msgPDUPos += 1;
+    for (int i = 0; i < numHosts; i++) {
+        char handle[MAX_HANDLE_LEN];
+        memset(handle, 0, MAX_HANDLE_LEN);
+        findHandle(handle, dataBuffer + 3 + bufferPos, dataBufferLen - 3 - bufferPos);
+        printf("found handle: %s\n", handle);
+
+        msgPDU = realloc(msgPDU, 1 + pduMessageLen + strlen(handle));
+        msgPDU[msgPDUPos] = (uint8_t)strlen(handle);
+        // msgPDU[msgPDUPos] = '7';
+        printf("multicast message: %s\n", msgPDU);
+        memcpy(msgPDU + msgPDUPos + 1, handle, strlen(handle)); //handle
+        printf("multicast message: %s\n", msgPDU);
+
+        msgPDUPos += 1 + strlen(handle);
+        pduMessageLen += strlen(handle) + 1; 
+        bufferPos += strlen(handle) + 1;
+    }
+
+    memcpy(msgPDU + msgPDUPos, dataBuffer + bufferPos + 5, dataBufferLen - 5 - bufferPos), 
+    printf("multicast message: %s\n", msgPDU);
+
+    sent = sendPDU(socketNum, msgPDU, pduMessageLen, FLAG_MULTICAST);
+    free(msgPDU);
+    if (sent < 0) {
+        exit(-1);
+    }
+
+}
+
+void sendBroadcastPDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
+{
+
 }
 
 void recvFromServer(int socketNum)
@@ -110,6 +166,11 @@ void recvFromServer(int socketNum)
 			printf("Messge from Socket %d, length: %d Data: %s\n", socketNum, messageLen, dataBuffer);
 			break;
 		}
+        case FLAG_MESSAGE_ERROR:
+        {
+            printf("No host with that name\n");
+            break;
+        }
 		case FLAG_LIST_COUNT:
 		{
 			memcpy(&totalClients, dataBuffer, messageLen);
