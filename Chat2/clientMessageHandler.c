@@ -16,6 +16,7 @@ void findHandle(char* handle, uint8_t* dataBuffer, int messageLen);
 void sendMessagePDU(int socketNum, int messageLen, uint8_t *dataBuffer);
 void sendListPDU(int socketNum);
 void sendMulticastPDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer);
+void sendBroadcastPDU(int socketNum, int messageLen, uint8_t *dataBuffer);
 
 void sendToServer(int socketNum, uint8_t * dataBuffer, int messageLen)
 {
@@ -37,7 +38,7 @@ void sendToServer(int socketNum, uint8_t * dataBuffer, int messageLen)
             sendMulticastPDU(socketNum, messageLen, dataBuffer);
             break;
         case 'B':
-            // sendBroadcastPDU(socketNum, messageLen, dataBuffer);
+            sendBroadcastPDU(socketNum, messageLen, dataBuffer);
             break;
         default:
             break;
@@ -143,7 +144,7 @@ void sendMulticastPDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
 
 void sendBroadcastPDU(int socketNum, int dataBufferLen, uint8_t *dataBuffer)
 {
-
+    sendPDU(socketNum, dataBuffer + 3, dataBufferLen - 3, FLAG_BROADCAST);
 }
 
 void recvFromServer(int socketNum)

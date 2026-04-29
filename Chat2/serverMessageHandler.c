@@ -155,6 +155,9 @@ void recvFromClient(int clientSocket)
         }
         case FLAG_BROADCAST:
         {
+            for (int i = 0; i < num_clients; i++) {
+                sendPDU(clientsTable[i].socketNum, dataBuffer, messageLen, FLAG_MESSAGE);
+            }
             break;
         }
         default:
