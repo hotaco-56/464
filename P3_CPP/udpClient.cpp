@@ -2,14 +2,14 @@
 
 UDPClient::UDPClient(UDPClientArgs& args) : 
 	args(args),
-	socketNum(setupUdpClientToServer(&server, args.remoteMachine, args.remotePort))
+	_socketNum(setupUdpClientToServer(&_server, args.remoteMachine, args.remotePort))
 {
 }
 
 UDPClient::~UDPClient()
 {
 	printf("Client terminated\n");
-    close(socketNum);
+    close(_socketNum);
 }
 
 void UDPClient::run()
@@ -41,7 +41,7 @@ void UDPClient::sendFilenamePDU()
 	pdu.payloadCpy(buffer + HEADER_SIZE);
 
 	__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), pdu.getSeqNum(), pdu.getChksum());
-	safeSendto(socketNum, buffer, pdu.getPDULen(), 0, (struct sockaddr*) &server, serverAddrLen);
+	safeSendto(_socketNum, buffer, pdu.getPDULen(), 0, (struct sockaddr*) &_server, serverAddrLen);
 }
 
 void UDPClient::sendDataPDU()
@@ -76,12 +76,12 @@ void UDPClient::talkToServer()
 
 		printf("Sending: %s with len: %d\n", buffer,dataLen);
 	
-		safeSendto(socketNum, buffer, dataLen, 0, (struct sockaddr *) &server, serverAddrLen);
-		safeRecvfrom(socketNum, buffer, args.bufferSize, 0, (struct sockaddr *) &server, &serverAddrLen);
+		safeSendto(_socketNum, buffer, dataLen, 0, (struct sockaddr *) &_server, serverAddrLen);
+		safeRecvfrom(_socketNum, buffer, args.bufferSize, 0, (struct sockaddr *) &_server, &serverAddrLen);
 		
 		// print out bytes received
-		ipString = ipAddressToString(&server);
-		printf("Server with ip: %s and port %d said it received %s\n", ipString, ntohs(server.sin6_port), buffer);
+		ipString = ipAddressToString(&_server);
+		printf("Server with ip: %s and port %d said it received %s\n", ipString, ntohs(_server.sin6_port), buffer);
 	}
 }
 

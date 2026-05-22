@@ -43,10 +43,10 @@ private:
     const uint8_t MAX_FILENAME_LEN = 100;
     const size_t serverAddrLen = sizeof(struct sockaddr_in6);
 
-    int socketNum;
-    struct sockaddr_in6 server;
+    int _socketNum;
+    struct sockaddr_in6 _server;
 
-    uint8_t retransmitCount = 0;
+    uint8_t _retransmitCount = 0;
 
     std::ifstream openFromFile();
     void talkToServer();

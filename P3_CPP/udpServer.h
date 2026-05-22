@@ -24,24 +24,23 @@ class UDPServer
 private:
     const int clientAddrLen = sizeof(struct sockaddr_in6);
 
-    float errRate;
-    int portNumber;
-    int socketNum;
+    float _errRate;
+    int _portNumber;
+    int _socketNum;
 
     struct sockaddr_in6 client;
 
-    void processClient();
     void recvFilenamePDU();
 public:
     UDPServer(float errRate = 0.0f, int portNumber = 0) : 
-        errRate(errRate),
-        portNumber(portNumber),
-        socketNum(udpServerSetup(portNumber))
+        _errRate(errRate),
+        _portNumber(portNumber),
+        _socketNum(udpServerSetup(portNumber))
     {
     }
     ~UDPServer();
     void run();
-    inline int getSocketNum(void) { return socketNum; }
+    inline int getSocketNum(void) { return _socketNum; }
 };
 
 

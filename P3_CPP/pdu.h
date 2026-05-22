@@ -53,34 +53,34 @@ private:
     } __attribute__((packed)) Header;
      
 
-    Header header = {};
-    unsigned char payload[MAX_PAYLOAD_SIZE] = {0};
-    uint16_t payloadLen = 0;
+    Header _header = {};
+    unsigned char _payload[MAX_PAYLOAD_SIZE] = {0};
+    uint16_t _payloadLen = 0;
 
 public:
     PDU();
     PDU(unsigned char* PDU, uint16_t pduLen);
     ~PDU();
     void calcChksum(uint16_t pduLen);
-    inline void clearChksum(void) { header.chksum = 0; }
-    inline uint16_t getChksum(void) { return header.chksum; }
+    inline void clearChksum(void) { _header.chksum = 0; }
+    inline uint16_t getChksum(void) { return _header.chksum; }
 
-    inline void setSeqNum(uint32_t n) { header.seqNum = htonl(n); } // in network order
-    inline uint32_t getSeqNum(void) { return header.seqNum; } // in network order
+    inline void setSeqNum(uint32_t n) { _header.seqNum = htonl(n); } // in network order
+    inline uint32_t getSeqNum(void) { return _header.seqNum; } // in network order
 
-    inline void setFlag(uint8_t flag) { header.flag = flag; }
-    inline uint8_t getFlag(void) { return header.flag;  }
+    inline void setFlag(uint8_t flag) { _header.flag = flag; }
+    inline uint8_t getFlag(void) { return _header.flag;  }
 
     inline void addPayload(unsigned char* payload, int16_t size) 
     {
-        memcpy(this->payload + payloadLen, payload, size);
-        payloadLen += size;
+        memcpy(_payload + _payloadLen, payload, size);
+        _payloadLen += size;
     }
-    inline unsigned char* getPayload() { return payload; }
-    inline uint16_t getPayloadLen() { return payloadLen; }
-    inline uint16_t getPDULen() { return HEADER_SIZE + payloadLen; }
-    inline void headerCpy(unsigned char* dest) { memcpy(dest, &header, HEADER_SIZE); }
-    inline void payloadCpy(unsigned char* dest) { memcpy(dest, payload, payloadLen); }
+    inline unsigned char* getPayload() { return _payload; }
+    inline uint16_t getPayloadLen() { return _payloadLen; }
+    inline uint16_t getPDULen() { return HEADER_SIZE + _payloadLen; }
+    inline void headerCpy(unsigned char* dest) { memcpy(dest, &_header, HEADER_SIZE); }
+    inline void payloadCpy(unsigned char* dest) { memcpy(dest, _payload, _payloadLen); }
 };
 
 #endif
