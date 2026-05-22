@@ -18,7 +18,7 @@
 // #include <arpa/inet.h>
 
 // #include "gethostbyname.h"
-// #include "networks.h"
+#include "networks.h"
 // #include "safeUtil.h"
 #include "checksum.h"
 
@@ -42,7 +42,7 @@
 #define MAX_PAYLOAD_SIZE 1400UL
 #define HEADER_SIZE 7U
 
-class PDUs
+class PDU
 {
 private:
     typedef struct {
@@ -51,19 +51,27 @@ private:
         uint8_t flag;
     } Header;
 
-    Header header;
+    Header header = {};
     unsigned char payload[MAX_PAYLOAD_SIZE] = {0};
+    uint16_t payloadLen = 0;
 
 public:
-    PDUs();
-    PDUs(unsigned char* PDU);
-    ~PDUs();
-    void calcChksum();
-    inline void setSequenceNum(uint32_t n) { header.seqNum = n; }
-    inline uint32_t getSeqNum(void) { return header.seqNum; }
+    PDU();
+    PDU(unsigned char* PDU);
+    ~PDU();
+    void calcChksum(uint16_t pduLen);
+    inline void clearChksum(void) { header.chksum = 0; }
+    inline uint16_t getChksum(void) { return header.chksum; }
+
+    inline void setSequenceNum(uint32_t n) { header.seqNum = n; } // in network order
+    inline uint32_t getSeqNum(void) { return header.seqNum; } // in network order
+
     inline void setFlag(uint8_t flag) { header.flag = flag; }
-    inline uint8_t getFlag(void) { return header.flag; }
+    inline uint8_t getFlag(void) { return header.flag;  }
+
     inline void setPayload(unsigned char* payload, int16_t size) { memcpy(payload, this->payload, size); }
+    inline uint16_t getPDULen() { return HEADER_SIZE + payloadLen; }
+    void headerCpy(unsigned char* dest);
 };
 
 #endif

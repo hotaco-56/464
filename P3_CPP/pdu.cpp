@@ -1,25 +1,38 @@
 #include "pdu.h"
 
-PDUs::PDUs()
+PDU::PDU() 
+{
+    header.seqNum = 0;
+    header.chksum = 0;
+    header.flag = 0;
+}
+
+PDU::PDU(unsigned char* data)
+{
+    headerCpy(data);
+}
+
+PDU::~PDU()
 {
 }
 
-PDUs::PDUs(unsigned char* data)
+void PDU::calcChksum(uint16_t pduLen)
 {
-    memcpy(&(header.seqNum), data, sizeof(header.seqNum));
-    data += sizeof(header.seqNum);
-    memcpy(&(header.chksum), data, sizeof(header.chksum));
-    data += sizeof(header.chksum);
-    memcpy(&(header.flag), data, sizeof(header.flag));
-    data += sizeof(header.flag);
+    unsigned short data[HEADER_SIZE + MAX_PAYLOAD_SIZE];
+    headerCpy((unsigned char*) data);
+    header.chksum = (uint16_t)in_cksum(data, pduLen);
 }
 
-PDUs::~PDUs()
+/*
+    copy header to dest
+*/
+void PDU::headerCpy(unsigned char* dest)
 {
+    memcpy(dest, &(header.seqNum), sizeof(header.seqNum));
+    dest += sizeof(header.seqNum);
+    memcpy(dest, &(header.chksum), sizeof(header.chksum));
+    dest += sizeof(header.chksum);
+    memcpy(dest, &(header.flag), sizeof(header.flag));
+    dest += sizeof(header.flag);
 
-}
-
-void PDUs::calcChksum()
-{
-    
 }

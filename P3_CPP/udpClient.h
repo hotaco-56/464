@@ -45,6 +45,8 @@ private:
     std::ifstream openFromFile();
     void talkToServer();
     int readFromStdin(char * buffer);
+
+    void sendFilenamePDU(void);
 public:
     UDPClient(UDPClientArgs& args);
     ~UDPClient();

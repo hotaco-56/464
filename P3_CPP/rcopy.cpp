@@ -16,7 +16,6 @@ int main (int argc, char *argv[])
 
 	client.run();
 	
-	client.~UDPClient();
 	return 0;
 }
 
