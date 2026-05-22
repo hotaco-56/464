@@ -50,15 +50,15 @@ void checkArgs(int argc, char * argv[], UDPClientArgs& args)
 		printf("to-file name too long\n");
 		exit(1);
 	}
-	if (atoi(argv[4]) > MAX_PAYLOAD_SIZE) {
+	if ((uint16_t)atol(argv[4]) > MAX_PAYLOAD_SIZE) {
 		printf("buffer-size too large\n");
 		exit(1);
 	}
 	
 	args.fromFilename = argv[1];
 	args.toFilename = argv[2];
-	args.windowSize = atoi(argv[3]);
-	args.bufferSize = atoi(argv[4]);
+	args.windowSize = atol(argv[3]);
+	args.bufferSize = atol(argv[4]);
 	args.errorRate = atof(argv[5]);
 	args.remoteMachine = argv[6];
 	args.remotePort = atoi(argv[7]);

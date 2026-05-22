@@ -16,6 +16,7 @@ void UDPClient::run()
 {
 	char buffer[args.bufferSize+1];
 	std::ifstream fromFile = openFromFile();
+	PDUs pdu;
 
 	// send setup packet
 	pdu.setFlag(SETUP);
@@ -35,6 +36,8 @@ std::ifstream UDPClient::openFromFile()
 		this->~UDPClient();
 		exit(1);
     }
+
+	return fromFile;
 }
 
 void UDPClient::talkToServer()

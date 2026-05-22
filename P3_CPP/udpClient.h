@@ -26,8 +26,8 @@
 typedef struct {
     char* fromFilename;
     char* toFilename;
-    uint8_t windowSize;
-    uint8_t bufferSize;
+    uint16_t windowSize;
+    uint16_t bufferSize;
     float errorRate;
     char* remoteMachine;
     int remotePort;
@@ -39,7 +39,6 @@ private:
     UDPClientArgs args;
     int socketNum;
     struct sockaddr_in6 server;
-    PDUs pdu;
 
     const size_t serverAddrLen = sizeof(struct sockaddr_in6);
 

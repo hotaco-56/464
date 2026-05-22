@@ -20,6 +20,7 @@
 // #include "gethostbyname.h"
 // #include "networks.h"
 // #include "safeUtil.h"
+#include "checksum.h"
 
 // a. Flag < 32 if not specified in this list cannot be used, if you create your own flag use ≥ 32
 // b. Flag = 1 Setup packet (rcopy to server) – optional
@@ -61,7 +62,7 @@ public:
     inline void setSequenceNum(uint32_t n) { header.seqNum = n; }
     inline uint32_t getSeqNum(void) { return header.seqNum; }
     inline void setFlag(uint8_t flag) { header.flag = flag; }
-    inline uint8_t getFlag(uint8_t flag) { header.flag = flag; }
+    inline uint8_t getFlag(void) { return header.flag; }
     inline void setPayload(unsigned char* payload, int16_t size) { memcpy(payload, this->payload, size); }
 };
 
