@@ -1,0 +1,28 @@
+# updated to use C++
+
+CXX = g++
+CXXFLAGS = -g -Wall -std=gnu++17 
+
+SRC = networks.cpp gethostbyname.cpp safeUtil.cpp pollLib.cpp udpClient.cpp udpServer.cpp
+OBJS = networks.o gethostbyname.o safeUtil.o pollLib.o udpClient.o udpServer.o
+
+# uncomment next two lines if you're using sendtoErr() library
+LIBS += libcpe464.2.21.a -ldl
+CXXFLAGS += -D__LIBCPE464_ -D__DEBUG_
+
+all: rcopy server cleano
+
+rcopy: rcopy.cpp $(OBJS)
+	$(CXX) $(CXXFLAGS) -o rcopy rcopy.cpp $(OBJS) $(LIBS)
+
+server: udpServer.cpp $(OBJS)
+	$(CXX) $(CXXFLAGS) -o server server.cpp $(OBJS) $(LIBS)
+
+%.o: %.cpp *.h
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+cleano:
+	rm -f *.o
+
+clean:
+	rm -f rcopy server *.o
