@@ -24,6 +24,7 @@
 #include "pdu.h"
 #include "pollLib.h"
 
+#include "vars.h"
 
 typedef struct {
     char* fromFilename;
@@ -40,7 +41,6 @@ class UDPClient
 private:
     UDPClientArgs args;
 
-    const uint8_t MAX_FILENAME_LEN = 100;
     const size_t serverAddrLen = sizeof(struct sockaddr_in6);
 
     int _socketNum;

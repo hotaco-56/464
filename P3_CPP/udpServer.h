@@ -17,7 +17,7 @@
 #include "pollLib.h"
 #include "pdu.h"
 
-#define MAXBUF 80
+#include "vars.h"
 
 class UDPServer
 {
@@ -28,7 +28,11 @@ private:
     int _portNumber;
     int _socketNum;
 
-    struct sockaddr_in6 client;
+    uint16_t _windowSize = 0;
+    uint16_t _bufferSize = 0;
+    char _toFilename[MAX_FILENAME_LEN + 1];
+
+    struct sockaddr_in6 _client;
 
     void recvFilenamePDU();
 public:

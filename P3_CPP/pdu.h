@@ -51,7 +51,6 @@ private:
         uint16_t chksum;
         uint8_t flag;
     } __attribute__((packed)) Header;
-     
 
     Header _header = {};
     unsigned char _payload[MAX_PAYLOAD_SIZE] = {0};

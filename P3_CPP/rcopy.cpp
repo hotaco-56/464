@@ -38,11 +38,11 @@ void checkArgs(int argc, char * argv[], UDPClientArgs& args)
 		exit(1);
 	}
 
-	if (strlen(argv[1]) > 100) {
+	if (strlen(argv[1]) > MAX_FILENAME_LEN) {
 		printf("from-file name too long\n");
 		exit(1);
 	}
-	if (strlen(argv[2]) > 100) {
+	if (strlen(argv[2]) > MAX_FILENAME_LEN) {
 		printf("to-file name too long\n");
 		exit(1);
 	}

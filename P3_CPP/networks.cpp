@@ -19,8 +19,6 @@
 #include "networks.h"
 #include "gethostbyname.h"
 
-
-
 // This function sets the server socket. The function returns the server
 // socket number and prints the port number to the screen.  
 

@@ -23,31 +23,29 @@ void UDPServer::recvFilenamePDU()
 {
 	int dataLen = 0;
 	unsigned char pdu[MAX_PDU_SIZE];
-	dataLen = safeRecvfrom(_socketNum, pdu, MAX_PDU_SIZE, 0, (struct sockaddr*) &client, (int*)&clientAddrLen);
+	dataLen = safeRecvfrom(_socketNum, pdu, MAX_PDU_SIZE, 0, (struct sockaddr*) &_client, (int*)&clientAddrLen);
 	PDU filenamePDU(pdu, dataLen);
 
+	// parse payload
 	unsigned char* payload = filenamePDU.getPayload();
-	char fromFilename[100 + 1];
-	uint16_t windowSize = 0;
-	uint16_t bufferSize = 0;
 
-	memcpy(&windowSize, payload, sizeof(windowSize));
+	memcpy(&_windowSize, payload, sizeof(_windowSize));
 	payload += 2;
-	memcpy(&bufferSize, payload, sizeof(bufferSize));
+	memcpy(&_bufferSize, payload, sizeof(_bufferSize));
 	payload += 2;
-	memcpy(fromFilename, payload, dataLen - 4 - HEADER_SIZE);
-	fromFilename[dataLen - 4 - HEADER_SIZE] = '\0';
+	memcpy(_toFilename, payload, dataLen - 4 - HEADER_SIZE);
+	_toFilename[dataLen - 4 - HEADER_SIZE] = '\0';
 
 	__PRINTF_DBG("Recevied filename pdu from client with ");
 	#ifdef __DEBUG_
-	printIPInfo(&client);
+	printIPInfo(&_client);
 	#endif
 	__PRINTF_DBG("\tPDULen: %d \'%s\'\n\tPayloadLen: %d\n", dataLen, pdu, filenamePDU.getPayloadLen());
 	__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
 		filenamePDU.getFlag(),
 		filenamePDU.getSeqNum(), 
 		filenamePDU.getChksum());
-	__PRINTF_DBG("\twindowSize: %d\n\tbufferSize: %d\n\tfileName: %s\n", windowSize, bufferSize, fromFilename);
+	__PRINTF_DBG("\twindowSize: %d\n\tbufferSize: %d\n\tfileName: %s\n", _windowSize, _bufferSize, _toFilename);
 }
 
 void sigchldHandler(int signo)

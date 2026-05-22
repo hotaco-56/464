@@ -34,7 +34,7 @@ void UDPClient::sendFilenamePDU()
 	pdu.setSeqNum(0);
 	pdu.addPayload((unsigned char*)&args.windowSize, sizeof(args.windowSize));
 	pdu.addPayload((unsigned char*)&args.bufferSize, sizeof(args.bufferSize));
-	pdu.addPayload((unsigned char*)args.fromFilename, strlen(args.fromFilename));
+	pdu.addPayload((unsigned char*)args.toFilename, strlen(args.toFilename));
 
 	pdu.calcChksum(HEADER_SIZE);
 	pdu.headerCpy(buffer);
