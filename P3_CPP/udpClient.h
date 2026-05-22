@@ -47,6 +47,7 @@ private:
     int readFromStdin(char * buffer);
 
     void sendFilenamePDU(void);
+    void sendDataPDU(void);
 public:
     UDPClient(UDPClientArgs& args);
     ~UDPClient();

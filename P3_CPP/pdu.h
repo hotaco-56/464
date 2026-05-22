@@ -63,7 +63,7 @@ public:
     inline void clearChksum(void) { header.chksum = 0; }
     inline uint16_t getChksum(void) { return header.chksum; }
 
-    inline void setSequenceNum(uint32_t n) { header.seqNum = n; } // in network order
+    inline void setSeqNum(uint32_t n) { header.seqNum = htonl(n); } // in network order
     inline uint32_t getSeqNum(void) { return header.seqNum; } // in network order
 
     inline void setFlag(uint8_t flag) { header.flag = flag; }

@@ -26,12 +26,17 @@ void UDPClient::sendFilenamePDU()
 	unsigned char buffer[args.bufferSize+1];
 	PDU pdu;
 	pdu.setFlag(FILENAME);
-	pdu.setSequenceNum(0);
+	pdu.setSeqNum(0);
 	pdu.calcChksum(HEADER_SIZE);
 	pdu.headerCpy(buffer);
 	pdu.setPayload((unsigned char*)args.fromFilename, strlen(args.fromFilename));
 	__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), pdu.getSeqNum(), pdu.getChksum());
 	safeSendto(socketNum, buffer, pdu.getPDULen(), 0, (struct sockaddr*) &server, serverAddrLen);
+}
+
+void UDPClient::sendDataPDU()
+{
+	__PRINTF_DBG("sending data pdu\n");
 }
 
 std::ifstream UDPClient::openFromFile()

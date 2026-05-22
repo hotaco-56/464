@@ -26,6 +26,8 @@ private:
     float errRate;
     int portNumber;
     int socketNum;
+    void processClient();
+    void recvFilenamePDU();
 public:
     UDPServer(float errRate = 0.0f, int portNumber = 0) : 
         errRate(errRate),
@@ -35,7 +37,6 @@ public:
     }
     ~UDPServer();
     void run();
-    void processClient();
     inline int getSocketNum(void) { return socketNum; }
 };
 
