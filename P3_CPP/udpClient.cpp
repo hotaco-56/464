@@ -18,6 +18,7 @@ void UDPClient::run()
 
 	// send filename packet
 	sendFilenamePDU();
+	pollCall(1000);
 }
 
 void UDPClient::sendFilenamePDU()

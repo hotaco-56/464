@@ -1,7 +1,4 @@
-// Client side - UDP Code				    
-// By Hugh Smith	4/1/1817
 #include "udpClient.h"
-#include "pdu.h"
 
 void checkArgs(int argc, char * argv[], UDPClientArgs& args);
 

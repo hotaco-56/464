@@ -53,11 +53,11 @@ private:
 
     Header header = {};
     unsigned char payload[MAX_PAYLOAD_SIZE] = {0};
-    uint16_t payloadLen = 0;
+    uint16_t payloadLen;
 
 public:
     PDU();
-    PDU(unsigned char* PDU);
+    PDU(unsigned char* PDU, uint16_t pduLen);
     ~PDU();
     void calcChksum(uint16_t pduLen);
     inline void clearChksum(void) { header.chksum = 0; }
@@ -70,6 +70,7 @@ public:
     inline uint8_t getFlag(void) { return header.flag;  }
 
     inline void setPayload(unsigned char* payload, int16_t size) { memcpy(payload, this->payload, size); }
+    inline uint16_t getPayloadLen() { return payloadLen; }
     inline uint16_t getPDULen() { return HEADER_SIZE + payloadLen; }
     void headerCpy(unsigned char* dest);
 };

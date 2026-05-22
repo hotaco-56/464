@@ -1,15 +1,18 @@
 #include "pdu.h"
 
-PDU::PDU() 
+PDU::PDU() : payloadLen(0)
 {
-    header.seqNum = 0;
-    header.chksum = 0;
-    header.flag = 0;
 }
 
-PDU::PDU(unsigned char* data)
+PDU::PDU(unsigned char* pdu, uint16_t pduLen) : payloadLen(pduLen - HEADER_SIZE)
 {
-    headerCpy(data);
+    memcpy(&(header.seqNum), pdu, sizeof(header.seqNum));
+    pdu += sizeof(header.seqNum);
+    memcpy(&(header.chksum), pdu, sizeof(header.chksum));
+    pdu += sizeof(header.chksum);
+    memcpy(&(header.flag), pdu, sizeof(header.flag));
+    pdu += sizeof(header.flag);
+    memcpy(payload, pdu, pduLen - HEADER_SIZE);
 }
 
 PDU::~PDU()

@@ -22,6 +22,7 @@
 #include "networks.h"
 #include "safeUtil.h"
 #include "pdu.h"
+#include "pollLib.h"
 
 typedef struct {
     char* fromFilename;
@@ -36,16 +37,17 @@ typedef struct {
 class UDPClient
 {
 private:
+    const size_t serverAddrLen = sizeof(struct sockaddr_in6);
+
     UDPClientArgs args;
     int socketNum;
     struct sockaddr_in6 server;
 
-    const size_t serverAddrLen = sizeof(struct sockaddr_in6);
+    uint8_t retransmitCount = 0;
 
     std::ifstream openFromFile();
     void talkToServer();
     int readFromStdin(char * buffer);
-
     void sendFilenamePDU(void);
     void sendDataPDU(void);
 public:
