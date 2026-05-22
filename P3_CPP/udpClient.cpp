@@ -21,16 +21,25 @@ void UDPClient::run()
 	pollCall(1000);
 }
 
+/*
+	sends 32-bit header + window-size + buffer-size + filename
+	max size : 7 + 2 + 2 + 100 = 111
+*/
 void UDPClient::sendFilenamePDU()
 {
 	__PRINTF_DBG("sending filename pdu\n");
-	unsigned char buffer[args.bufferSize+1];
+	unsigned char buffer[MAX_PDU_SIZE];
 	PDU pdu;
 	pdu.setFlag(FILENAME);
 	pdu.setSeqNum(0);
+	pdu.addPayload((unsigned char*)&args.windowSize, sizeof(args.windowSize));
+	pdu.addPayload((unsigned char*)&args.bufferSize, sizeof(args.bufferSize));
+	pdu.addPayload((unsigned char*)args.fromFilename, strlen(args.fromFilename));
+
 	pdu.calcChksum(HEADER_SIZE);
 	pdu.headerCpy(buffer);
-	pdu.setPayload((unsigned char*)args.fromFilename, strlen(args.fromFilename));
+	pdu.payloadCpy(buffer + HEADER_SIZE);
+
 	__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), pdu.getSeqNum(), pdu.getChksum());
 	safeSendto(socketNum, buffer, pdu.getPDULen(), 0, (struct sockaddr*) &server, serverAddrLen);
 }

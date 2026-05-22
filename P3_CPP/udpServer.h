@@ -22,10 +22,14 @@
 class UDPServer
 {
 private:
-    /* data */
+    const int clientAddrLen = sizeof(struct sockaddr_in6);
+
     float errRate;
     int portNumber;
     int socketNum;
+
+    struct sockaddr_in6 client;
+
     void processClient();
     void recvFilenamePDU();
 public:

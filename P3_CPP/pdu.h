@@ -41,6 +41,7 @@
 
 #define MAX_PAYLOAD_SIZE 1400UL
 #define HEADER_SIZE 7U
+#define MAX_PDU_SIZE (HEADER_SIZE + MAX_PAYLOAD_SIZE)
 
 class PDU
 {
@@ -49,11 +50,12 @@ private:
         uint32_t seqNum;
         uint16_t chksum;
         uint8_t flag;
-    } Header;
+    } __attribute__((packed)) Header;
+     
 
     Header header = {};
     unsigned char payload[MAX_PAYLOAD_SIZE] = {0};
-    uint16_t payloadLen;
+    uint16_t payloadLen = 0;
 
 public:
     PDU();
@@ -69,10 +71,16 @@ public:
     inline void setFlag(uint8_t flag) { header.flag = flag; }
     inline uint8_t getFlag(void) { return header.flag;  }
 
-    inline void setPayload(unsigned char* payload, int16_t size) { memcpy(payload, this->payload, size); }
+    inline void addPayload(unsigned char* payload, int16_t size) 
+    {
+        memcpy(this->payload + payloadLen, payload, size);
+        payloadLen += size;
+    }
+    inline unsigned char* getPayload() { return payload; }
     inline uint16_t getPayloadLen() { return payloadLen; }
     inline uint16_t getPDULen() { return HEADER_SIZE + payloadLen; }
-    void headerCpy(unsigned char* dest);
+    inline void headerCpy(unsigned char* dest) { memcpy(dest, &header, HEADER_SIZE); }
+    inline void payloadCpy(unsigned char* dest) { memcpy(dest, payload, payloadLen); }
 };
 
 #endif
