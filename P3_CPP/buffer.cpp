@@ -17,12 +17,6 @@ void FIFOBuffer::shiftBuffer()
     PDU* firstPDUAddr = _pduBuffer + (_bufferSize * pduSize);
 
     for (PDU* currPDU = firstPDUAddr; currPDU > _pduBuffer; currPDU -= pduSize) {
-        memcpy(currPDU, currPDU - pduSize, pduSize);
+        *currPDU = *(currPDU - pduSize); // copy assignment
     }
-
-    // for (uint32_t i = _bufferSize; i > 0; i--) {
-    //     PDU* currPDU = firstPDUAddr - (i * pduSize);
-    //     PDU* prevPDU = currPDU - pduSize;
-    //     memcpy(currPDU, prevPDU, pduSize);
-    // }
 }

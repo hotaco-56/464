@@ -53,9 +53,9 @@ private:
     } __attribute__((packed)) Header;
 
     Header _header = {};
+    uint16_t _payloadLen = 0;
     unsigned char _payload[MAX_PAYLOAD_SIZE] = {0};
     unsigned char _pdu[MAX_PDU_SIZE] = {0};
-    uint16_t _payloadLen = 0;
 
     // copy data to header section of pdu
     inline void headerCpy(unsigned char* dest) { memcpy(dest, &_header, HEADER_SIZE); }
@@ -66,15 +66,18 @@ public:
     PDU();
     PDU(unsigned char* PDU, uint16_t pduLen);
     ~PDU();
+
+    PDU& operator=(const PDU& other); // first time using this fr holy
+
     inline void calcChksum(uint16_t pduLen) { _header.chksum = (uint16_t)in_cksum((unsigned short*)_pdu, pduLen); }
     inline void clearChksum(void) { _header.chksum = 0; }
-    inline uint16_t getChksum(void) { return _header.chksum; }
+    inline uint16_t getChksum(void) const { return _header.chksum; }
 
     inline void setSeqNum(uint32_t n) { _header.seqNum = htonl(n); } // in network order
-    inline uint32_t getSeqNum(void) { return _header.seqNum; } // in network order
+    inline uint32_t getSeqNum(void) const { return _header.seqNum; } // in network order
 
     inline void setFlag(uint8_t flag) { _header.flag = flag; }
-    inline uint8_t getFlag(void) { return _header.flag;  }
+    inline uint8_t getFlag(void) const { return _header.flag;  }
 
     inline void addPayload(unsigned char* payload, int16_t size) 
     {
@@ -82,7 +85,7 @@ public:
         _payloadLen += size;
     }
     inline unsigned char* getPayload() { return _payload; }
-    inline uint16_t getPayloadLen() { return _payloadLen; }
+    inline uint16_t getPayloadLen() const { return _payloadLen; }
     
     inline unsigned char* getPDU() { 
         headerCpy(_pdu);
@@ -91,7 +94,7 @@ public:
         headerCpy(_pdu); // copy new header with chksum into pdu
         return _pdu; 
     }
-    inline uint16_t getPDULen() { return HEADER_SIZE + _payloadLen; }
+    inline uint16_t getPDULen() const { return HEADER_SIZE + _payloadLen; }
 };
 
 #endif

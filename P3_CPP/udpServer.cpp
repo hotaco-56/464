@@ -41,7 +41,7 @@ void UDPServer::recvFilename()
 {
 	int dataLen = 0;
 	unsigned char data[MAX_PDU_SIZE];
-	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_client, (int*)&clientAddrLen);
+	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_client, (int*)&_clientAddrLen);
 	PDU pdu(data, dataLen);
 	_pduSeqNum = ntohl(pdu.getSeqNum()) + 1;
 
@@ -76,7 +76,7 @@ void UDPServer::sendFilenameAck()
 	unsigned char* data = pdu.getPDU();
 
 	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
-	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, clientAddrLen);
+	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }
 
 void processNewClient()

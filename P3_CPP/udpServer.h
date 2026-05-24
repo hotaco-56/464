@@ -22,7 +22,7 @@
 class UDPServer
 {
 private:
-    const int clientAddrLen = sizeof(struct sockaddr_in6);
+    const int _clientAddrLen = sizeof(struct sockaddr_in6);
 
     float _errRate;
     int _portNumber;
