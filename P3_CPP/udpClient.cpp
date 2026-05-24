@@ -1,5 +1,17 @@
 #include "udpClient.h"
 
+void UDPClient::retransmitCallback(void (*send)())
+{
+	bool ackReceived = false;
+	int retransmitCount = 0;
+	while (!ackReceived)
+	{
+		if (++retransmitCount > 10)
+			this->~UDPClient();
+		send();
+	}
+}
+
 UDPClient::UDPClient(UDPClientArgs& args) : 
 	args(args),
 	_socketNum(setupUdpClientToServer(&_server, args.remoteMachine, args.remotePort))
@@ -16,32 +28,29 @@ void UDPClient::run()
 {
 	std::ifstream fromFile = openFromFile();
 
+	bool ackReceived = false;
 	// send filename packet
 	sendFilenamePDU();
-	pollCall(1000);
+	pollCall(1000); //poll for ack
 }
 
 /*
-	sends 32-bit header + window-size + buffer-size + filename
+	sends 32-bit header + window-size + buffer-size + to-filename
 	max size : 7 + 2 + 2 + 100 = 111
 */
 void UDPClient::sendFilenamePDU()
 {
 	__PRINTF_DBG("sending filename pdu\n");
-	unsigned char buffer[MAX_PDU_SIZE];
 	PDU pdu;
 	pdu.setFlag(FILENAME);
 	pdu.setSeqNum(0);
 	pdu.addPayload((unsigned char*)&args.windowSize, sizeof(args.windowSize));
 	pdu.addPayload((unsigned char*)&args.bufferSize, sizeof(args.bufferSize));
 	pdu.addPayload((unsigned char*)args.toFilename, strlen(args.toFilename));
-
-	pdu.calcChksum(HEADER_SIZE);
-	pdu.headerCpy(buffer);
-	pdu.payloadCpy(buffer + HEADER_SIZE);
+	unsigned char* data = pdu.getPDU();
 
 	__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), pdu.getSeqNum(), pdu.getChksum());
-	safeSendto(_socketNum, buffer, pdu.getPDULen(), 0, (struct sockaddr*) &_server, serverAddrLen);
+	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_server, serverAddrLen);
 }
 
 void UDPClient::sendDataPDU()
@@ -60,29 +69,6 @@ std::ifstream UDPClient::openFromFile()
     }
 
 	return fromFile;
-}
-
-void UDPClient::talkToServer()
-{
-	int serverAddrLen = sizeof(struct sockaddr_in6);
-	char * ipString = NULL;
-	int dataLen = 0; 
-	char buffer[args.bufferSize+1];
-	
-	buffer[0] = '\0';
-	while (buffer[0] != '.')
-	{
-		dataLen = readFromStdin(buffer);
-
-		printf("Sending: %s with len: %d\n", buffer,dataLen);
-	
-		safeSendto(_socketNum, buffer, dataLen, 0, (struct sockaddr *) &_server, serverAddrLen);
-		safeRecvfrom(_socketNum, buffer, args.bufferSize, 0, (struct sockaddr *) &_server, &serverAddrLen);
-		
-		// print out bytes received
-		ipString = ipAddressToString(&_server);
-		printf("Server with ip: %s and port %d said it received %s\n", ipString, ntohs(_server.sin6_port), buffer);
-	}
 }
 
 int UDPClient::readFromStdin(char * buffer)

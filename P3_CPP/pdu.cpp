@@ -13,11 +13,3 @@ PDU::PDU(unsigned char* pdu, uint16_t pduLen) : _payloadLen(pduLen - HEADER_SIZE
 PDU::~PDU()
 {
 }
-
-void PDU::calcChksum(uint16_t pduLen)
-{
-    unsigned short data[HEADER_SIZE + MAX_PAYLOAD_SIZE];
-    headerCpy((unsigned char*) data);
-    clearChksum();
-    _header.chksum = (uint16_t)in_cksum(data, pduLen);
-}

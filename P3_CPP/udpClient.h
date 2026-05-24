@@ -49,10 +49,10 @@ private:
     uint8_t _retransmitCount = 0;
 
     std::ifstream openFromFile();
-    void talkToServer();
     int readFromStdin(char * buffer);
     void sendFilenamePDU(void);
     void sendDataPDU(void);
+    void retransmitCallback(void(*func)());
 public:
     UDPClient(UDPClientArgs& args);
     ~UDPClient();

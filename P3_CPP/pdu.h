@@ -54,13 +54,19 @@ private:
 
     Header _header = {};
     unsigned char _payload[MAX_PAYLOAD_SIZE] = {0};
+    unsigned char _pdu[MAX_PDU_SIZE] = {0};
     uint16_t _payloadLen = 0;
+
+    // copy data to header section of pdu
+    inline void headerCpy(unsigned char* dest) { memcpy(dest, &_header, HEADER_SIZE); }
+    // copy data to payload section of pdu
+    inline void payloadCpy(unsigned char* dest) { memcpy(dest + HEADER_SIZE, _payload, _payloadLen); } 
 
 public:
     PDU();
     PDU(unsigned char* PDU, uint16_t pduLen);
     ~PDU();
-    void calcChksum(uint16_t pduLen);
+    inline void calcChksum(uint16_t pduLen) { _header.chksum = (uint16_t)in_cksum((unsigned short*)_pdu, pduLen); }
     inline void clearChksum(void) { _header.chksum = 0; }
     inline uint16_t getChksum(void) { return _header.chksum; }
 
@@ -77,9 +83,15 @@ public:
     }
     inline unsigned char* getPayload() { return _payload; }
     inline uint16_t getPayloadLen() { return _payloadLen; }
+    
+    inline unsigned char* getPDU() { 
+        headerCpy(_pdu);
+        payloadCpy(_pdu);
+        calcChksum(getPDULen());
+        headerCpy(_pdu); // copy new header with chksum into pdu
+        return _pdu; 
+    }
     inline uint16_t getPDULen() { return HEADER_SIZE + _payloadLen; }
-    inline void headerCpy(unsigned char* dest) { memcpy(dest, &_header, HEADER_SIZE); }
-    inline void payloadCpy(unsigned char* dest) { memcpy(dest, _payload, _payloadLen); }
 };
 
 #endif

@@ -12,7 +12,7 @@ void UDPServer::run()
 {
 	setupSignalHandlers();
 	setupPollSet();
-	addToPollSet(this->_socketNum);
+	addToPollSet(_socketNum);
 
 	while(1) {
 		recvFilenamePDU();
@@ -22,12 +22,12 @@ void UDPServer::run()
 void UDPServer::recvFilenamePDU()
 {
 	int dataLen = 0;
-	unsigned char pdu[MAX_PDU_SIZE];
-	dataLen = safeRecvfrom(_socketNum, pdu, MAX_PDU_SIZE, 0, (struct sockaddr*) &_client, (int*)&clientAddrLen);
-	PDU filenamePDU(pdu, dataLen);
+	unsigned char data[MAX_PDU_SIZE];
+	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_client, (int*)&clientAddrLen);
+	PDU pdu(data, dataLen);
 
 	// parse payload
-	unsigned char* payload = filenamePDU.getPayload();
+	unsigned char* payload = pdu.getPayload();
 
 	memcpy(&_windowSize, payload, sizeof(_windowSize));
 	payload += 2;
@@ -36,16 +36,22 @@ void UDPServer::recvFilenamePDU()
 	memcpy(_toFilename, payload, dataLen - 4 - HEADER_SIZE);
 	_toFilename[dataLen - 4 - HEADER_SIZE] = '\0';
 
-	__PRINTF_DBG("Recevied filename pdu from client with ");
+	__PRINTF_DBG("Received filename pdu from client with ");
 	#ifdef __DEBUG_
 	printIPInfo(&_client);
 	#endif
-	__PRINTF_DBG("\tPDULen: %d \'%s\'\n\tPayloadLen: %d\n", dataLen, pdu, filenamePDU.getPayloadLen());
+	__PRINTF_DBG("\tPDULen: %d \'%s\'\n\tPayloadLen: %d\n", dataLen, data, pdu.getPayloadLen());
 	__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
-		filenamePDU.getFlag(),
-		filenamePDU.getSeqNum(), 
-		filenamePDU.getChksum());
+		pdu.getFlag(),
+		pdu.getSeqNum(), 
+		pdu.getChksum());
 	__PRINTF_DBG("\twindowSize: %d\n\tbufferSize: %d\n\tfileName: %s\n", _windowSize, _bufferSize, _toFilename);
+}
+
+void processNewClient()
+{
+	__PRINTF_DBG("Processing New Client\n");
+	
 }
 
 void sigchldHandler(int signo)
