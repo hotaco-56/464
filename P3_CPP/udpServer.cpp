@@ -15,16 +15,18 @@ void UDPServer::run()
 	addToPollSet(_socketNum);
 
 	while(1) {
-		recvFilenamePDU();
+		recvFilename();
+		sendFilenameAck();
 	}
 }
 
-void UDPServer::recvFilenamePDU()
+void UDPServer::recvFilename()
 {
 	int dataLen = 0;
 	unsigned char data[MAX_PDU_SIZE];
 	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_client, (int*)&clientAddrLen);
 	PDU pdu(data, dataLen);
+	_pduSeqNum = ntohl(pdu.getSeqNum()) + 1;
 
 	// parse payload
 	unsigned char* payload = pdu.getPayload();
@@ -46,6 +48,18 @@ void UDPServer::recvFilenamePDU()
 		pdu.getSeqNum(), 
 		pdu.getChksum());
 	__PRINTF_DBG("\twindowSize: %d\n\tbufferSize: %d\n\tfileName: %s\n", _windowSize, _bufferSize, _toFilename);
+}
+
+void UDPServer::sendFilenameAck()
+{
+	__PRINTF_DBG("Sending FILENAME_ACK pdu\n");
+	PDU pdu;
+	pdu.setFlag(FILENAME_ACK);
+	pdu.setSeqNum(_pduSeqNum);
+	unsigned char* data = pdu.getPDU();
+
+	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
+	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, clientAddrLen);
 }
 
 void processNewClient()

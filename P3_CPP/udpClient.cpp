@@ -16,6 +16,8 @@ UDPClient::UDPClient(UDPClientArgs& args) :
 	args(args),
 	_socketNum(setupUdpClientToServer(&_server, args.remoteMachine, args.remotePort))
 {
+	
+	addToPollSet(_socketNum);
 }
 
 UDPClient::~UDPClient()
@@ -28,10 +30,32 @@ void UDPClient::run()
 {
 	std::ifstream fromFile = openFromFile();
 
-	bool ackReceived = false;
 	// send filename packet
 	sendFilenamePDU();
-	pollCall(1000); //poll for ack
+	if (pollCall(1000) == _socketNum) { //poll for ack
+		recvPDU();
+	}
+}
+
+void UDPClient::recvPDU()
+{
+	unsigned char data[MAX_PDU_SIZE] = {0};
+	int dataLen = 0;
+	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_server, &serverAddrLen);
+
+	PDU pdu(data, dataLen);
+
+	switch (pdu.getFlag())
+	{
+		case FILENAME_ACK:
+		{
+			__PRINTF_DBG("Received FILENAME_ACK pdu\n");
+			break;
+		}
+	
+		default:
+			break;
+	}
 }
 
 /*
@@ -40,7 +64,7 @@ void UDPClient::run()
 */
 void UDPClient::sendFilenamePDU()
 {
-	__PRINTF_DBG("sending filename pdu\n");
+	__PRINTF_DBG("Sending FILENAME pdu\n");
 	PDU pdu;
 	pdu.setFlag(FILENAME);
 	pdu.setSeqNum(0);
@@ -49,7 +73,7 @@ void UDPClient::sendFilenamePDU()
 	pdu.addPayload((unsigned char*)args.toFilename, strlen(args.toFilename));
 	unsigned char* data = pdu.getPDU();
 
-	__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), pdu.getSeqNum(), pdu.getChksum());
+	__PRINTF_DBG("FILENAME PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), pdu.getSeqNum(), pdu.getChksum());
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_server, serverAddrLen);
 }
 
@@ -69,29 +93,4 @@ std::ifstream UDPClient::openFromFile()
     }
 
 	return fromFile;
-}
-
-int UDPClient::readFromStdin(char * buffer)
-{
-	char aChar = 0;
-	int inputLen = 0;        
-	
-	// Important you don't input more characters than you have space 
-	buffer[0] = '\0';
-	printf("Enter data: ");
-	while (inputLen < (args.bufferSize - 1) && aChar != '\n')
-	{
-		aChar = getchar();
-		if (aChar != '\n')
-		{
-			buffer[inputLen] = aChar;
-			inputLen++;
-		}
-	}
-	
-	// Null terminate the string
-	buffer[inputLen] = '\0';
-	inputLen++;
-	
-	return inputLen;
 }

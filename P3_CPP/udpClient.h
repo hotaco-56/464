@@ -41,7 +41,7 @@ class UDPClient
 private:
     UDPClientArgs args;
 
-    const size_t serverAddrLen = sizeof(struct sockaddr_in6);
+    int serverAddrLen = (int)sizeof(struct sockaddr_in6);
 
     int _socketNum;
     struct sockaddr_in6 _server;
@@ -53,6 +53,7 @@ private:
     void sendFilenamePDU(void);
     void sendDataPDU(void);
     void retransmitCallback(void(*func)());
+    void recvPDU();
 public:
     UDPClient(UDPClientArgs& args);
     ~UDPClient();

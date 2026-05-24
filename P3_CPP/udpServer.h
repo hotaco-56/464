@@ -31,10 +31,12 @@ private:
     uint16_t _windowSize = 0;
     uint16_t _bufferSize = 0;
     char _toFilename[MAX_FILENAME_LEN + 1];
+    uint16_t _pduSeqNum = 0;
 
     struct sockaddr_in6 _client;
 
-    void recvFilenamePDU();
+    void recvFilename();
+    void sendFilenameAck();
 public:
     UDPServer(float errRate = 0.0f, int portNumber = 0) : 
         _errRate(errRate),
