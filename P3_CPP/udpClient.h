@@ -29,7 +29,7 @@
 typedef struct {
     char* fromFilename;
     char* toFilename;
-    uint16_t windowSize;
+    uint32_t windowSize;
     uint16_t bufferSize;
     float errorRate;
     char* remoteMachine;
@@ -39,9 +39,9 @@ typedef struct {
 class UDPClient
 {
 private:
-    UDPClientArgs args;
+    UDPClientArgs _args;
 
-    int serverAddrLen = (int)sizeof(struct sockaddr_in6);
+    int _serverAddrLen = (int)sizeof(struct sockaddr_in6);
 
     int _socketNum;
     struct sockaddr_in6 _server;

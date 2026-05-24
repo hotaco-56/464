@@ -20,7 +20,7 @@ void UDPServer::run()
 		waitpid(-1, nullptr, WNOHANG);
 		if (pollCall(-1) == _socketNum) {
 			pid = fork();
-			if (pid == 0) {
+			if (pid == 0) { // inside child process
 				runInternal();
 				return;
 			}
@@ -82,7 +82,6 @@ void UDPServer::sendFilenameAck()
 void processNewClient()
 {
 	__PRINTF_DBG("Processing New Client\n");
-	
 }
 
 void sigchldHandler(int signo)

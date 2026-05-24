@@ -13,10 +13,9 @@ void UDPClient::retransmitCallback(void (*send)())
 }
 
 UDPClient::UDPClient(UDPClientArgs& args) : 
-	args(args),
+	_args(args),
 	_socketNum(setupUdpClientToServer(&_server, args.remoteMachine, args.remotePort))
 {
-	
 	addToPollSet(_socketNum);
 }
 
@@ -32,7 +31,7 @@ void UDPClient::run()
 
 	// send filename packet
 	sendFilenamePDU();
-	if (pollCall(1000) == _socketNum) { //poll for ack
+	if (pollCall(0) == _socketNum) { //poll for ack
 		recvPDU();
 	}
 }
@@ -41,7 +40,7 @@ void UDPClient::recvPDU()
 {
 	unsigned char data[MAX_PDU_SIZE] = {0};
 	int dataLen = 0;
-	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_server, &serverAddrLen);
+	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_server, &_serverAddrLen);
 
 	PDU pdu(data, dataLen);
 
@@ -52,7 +51,6 @@ void UDPClient::recvPDU()
 			__PRINTF_DBG("Received FILENAME_ACK pdu\n");
 			break;
 		}
-	
 		default:
 			break;
 	}
@@ -68,13 +66,13 @@ void UDPClient::sendFilenamePDU()
 	PDU pdu;
 	pdu.setFlag(FILENAME);
 	pdu.setSeqNum(0);
-	pdu.addPayload((unsigned char*)&args.windowSize, sizeof(args.windowSize));
-	pdu.addPayload((unsigned char*)&args.bufferSize, sizeof(args.bufferSize));
-	pdu.addPayload((unsigned char*)args.toFilename, strlen(args.toFilename));
+	pdu.addPayload((unsigned char*)&_args.windowSize, sizeof(_args.windowSize));
+	pdu.addPayload((unsigned char*)&_args.bufferSize, sizeof(_args.bufferSize));
+	pdu.addPayload((unsigned char*)_args.toFilename, strlen(_args.toFilename));
 	unsigned char* data = pdu.getPDU();
 
 	__PRINTF_DBG("FILENAME PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), pdu.getSeqNum(), pdu.getChksum());
-	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_server, serverAddrLen);
+	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
 }
 
 void UDPClient::sendDataPDU()
@@ -84,10 +82,10 @@ void UDPClient::sendDataPDU()
 
 std::ifstream UDPClient::openFromFile()
 {
-	std::ifstream fromFile(args.fromFilename);
+	std::ifstream fromFile(_args.fromFilename);
 
 	if (!fromFile) {
-        printf("File %s not found\n", args.fromFilename);
+        printf("File %s not found\n", _args.fromFilename);
 		this->~UDPClient();
 		exit(1);
     }
