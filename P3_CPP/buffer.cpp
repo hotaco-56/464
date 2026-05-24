@@ -14,7 +14,7 @@ FIFOBuffer::~FIFOBuffer()
 void FIFOBuffer::shiftBuffer()
 {
     uint32_t pduSize = sizeof(PDU);
-    PDU* firstPDUAddr = _pduBuffer + (_bufferSize * pduSize);
+    PDU* firstPDUAddr = _pduBuffer + ((_bufferSize-1) * pduSize); // first is last
 
     for (PDU* currPDU = firstPDUAddr; currPDU > _pduBuffer; currPDU -= pduSize) {
         *currPDU = *(currPDU - pduSize); // copy assignment
