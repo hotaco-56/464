@@ -14,7 +14,7 @@ private:
 public:
     FIFOBuffer(uint32_t size);
     ~FIFOBuffer();
-    void add(PDU pdu);
+    inline void add(PDU* pdu) { memcpy(pduBuffer, pdu, sizeof(PDU)); }
 };
 
 #endif

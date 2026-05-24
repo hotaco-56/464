@@ -13,9 +13,16 @@ FIFOBuffer::~FIFOBuffer()
 
 void FIFOBuffer::shiftBuffer()
 {
-}
+    uint32_t pduSize = sizeof(PDU);
+    PDU* firstPDUAddr = pduBuffer + (_bufferSize * pduSize);
 
-void FIFOBuffer::add(PDU pdu)
-{
-    
+    for (PDU* currPDU = firstPDUAddr; currPDU > pduBuffer; currPDU -= pduSize) {
+        memcpy(currPDU, currPDU - pduSize, pduSize);
+    }
+
+    // for (uint32_t i = _bufferSize; i > 0; i--) {
+    //     PDU* currPDU = firstPDUAddr - (i * pduSize);
+    //     PDU* prevPDU = currPDU - pduSize;
+    //     memcpy(currPDU, prevPDU, pduSize);
+    // }
 }
