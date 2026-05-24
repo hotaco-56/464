@@ -10,14 +10,31 @@ UDPServer::~UDPServer()
 
 void UDPServer::run()
 {
-	setupSignalHandlers();
+	// setupSignalHandlers();
 	setupPollSet();
 	addToPollSet(_socketNum);
 
 	while(1) {
-		recvFilename();
-		sendFilenameAck();
+		pid_t pid = 0;
+		
+		waitpid(-1, nullptr, WNOHANG);
+		if (pollCall(-1) == _socketNum) {
+			pid = fork();
+			if (pid == 0) {
+				runInternal();
+				return;
+			}
+			else {
+				printf("Child Process created: %d\n", pid);
+			}
+		}
 	}
+}
+
+void UDPServer::runInternal()
+{
+	recvFilename();
+	sendFilenameAck();
 }
 
 void UDPServer::recvFilename()

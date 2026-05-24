@@ -37,6 +37,7 @@ private:
 
     void recvFilename();
     void sendFilenameAck();
+    void runInternal();
 public:
     UDPServer(float errRate = 0.0f, int portNumber = 0) : 
         _errRate(errRate),
