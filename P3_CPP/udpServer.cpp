@@ -13,12 +13,12 @@ UDPServer::~UDPServer()
 {
 	__PRINTF_DBG("======================= CLEANUP ========================\n");
 	if (_isChild)
-		__PRINTF_DBG("\tChild terminated\n");
+		__PRINTF_DBG("Child terminated\n");
 	else
-		__PRINTF_DBG("\tServer deconstructor called\n");
+		__PRINTF_DBG("Server deconstructor called\n");
 
-	__PRINTF_DBG("\tClosed socket: %d\n", _socketNum);
-	__PRINTF_DBG("\tClosed file: %s\n", _toFilename);
+	__PRINTF_DBG("Closed socket: %d\n", _socketNum);
+	__PRINTF_DBG("Closed file: %s\n", _toFilename);
     close(_socketNum);
 	_toFile.close();
 }
