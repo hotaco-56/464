@@ -32,10 +32,10 @@ private:
     int _portNumber;
     int _socketNum;
 
-    uint32_t _windowSize = 0;
-    uint16_t _bufferSize = 0;
+    windowSize_t _windowSize = 0;
+    buffSize_t _bufferSize = 0;
     char _toFilename[MAX_FILENAME_LEN + 1];
-    uint16_t _pduSeqNum = 0;
+    seqNum_t _expectedSequenceNum = 0;
 
     struct sockaddr_in6 _client;
 
@@ -49,6 +49,7 @@ private:
     void parseFilenamePDU(PDU pdu);
     void sendFilenameAck();
     void sendFilenameErr();
+    void sendRR();
     void runInternal();
 public:
     UDPServer(float err, int port);

@@ -4,6 +4,10 @@
 const uint8_t MAX_FILENAME_LEN = 100;
 const uint8_t MAX_RETRANSMIT_COUNT = 10;
 
+#define seqNum_t uint32_t
+#define windowSize_t uint32_t
+#define buffSize_t uint16_t
+
 #ifndef __DEBUG_
 #define __PRINTF_DBG (void)
 #else

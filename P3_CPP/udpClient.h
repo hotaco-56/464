@@ -32,8 +32,8 @@
 typedef struct {
     char* fromFilename;
     char* toFilename;
-    uint32_t windowSize;
-    uint16_t bufferSize;
+    windowSize_t windowSize;
+    buffSize_t bufferSize;
     float errorRate;
     char* remoteMachine;
     int remotePort;
@@ -48,7 +48,7 @@ private:
     struct sockaddr_in6 _server;
 
     Window _window;
-    uint16_t _pduSeqNum = 0;
+    seqNum_t _pduSeqNum = 0;
 
     std::ifstream _fromFile;
     void openFromFile();

@@ -1,7 +1,7 @@
 #include "window.h"
 
-Window::Window(uint32_t windowSize, uint32_t bufferSize) : 
-    _buffer(bufferSize), 
+Window::Window(windowSize_t windowSize) : 
+    _buffer(windowSize), 
     _size(windowSize), 
     _upper(windowSize)
 {

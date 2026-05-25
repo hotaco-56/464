@@ -6,17 +6,18 @@
 #include "pdu.h"
 #include "vars.h"
 
+template <typename Datatype>
 class FIFOBuffer
 {
 private:
     uint32_t _bufferSize;
-    PDU* _pduBuffer;
+    Datatype* _buffer;
     void shiftBuffer();
 public:
     FIFOBuffer(uint32_t size);
     ~FIFOBuffer();
-    void add(PDU pdu); 
-    inline PDU get(uint32_t i) { return _pduBuffer[i]; }
+    void add(Datatype data);
+    inline Datatype get(uint32_t i) { return _buffer[i]; }
 };
 
 #endif
