@@ -45,7 +45,7 @@ private:
     void setup();
     void recvPDU(); // returns pdu flag
     void parseFilenamePDU(PDU pdu);
-    void sendFilenameAck(int);
+    void sendFilenameAck();
     void sendFilenameErr();
     void runInternal();
 public:

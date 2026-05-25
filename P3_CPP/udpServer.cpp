@@ -82,14 +82,11 @@ void UDPServer::recvPDU()
 				_isChild = true;
 				
 				// child needs to reconfigure server for new socket
-				int newPort = 0;
-				int newSocketNum = udpServerSetup(newPort);
 				removeFromPollSet(_socketNum);
 				close(_socketNum);
-				_socketNum = newSocketNum;
-				_portNumber = newPort;
+				_socketNum = udpServerSetup(_portNumber);
 
-				sendFilenameAck(newPort);
+				sendFilenameAck();
 			}
 			break;
 		}
@@ -129,17 +126,17 @@ void UDPServer::parseFilenamePDU(PDU pdu)
 	__PRINTF_DBG("\twindowSize: %d\n\tbufferSize: %d\n\tfileName: %s\n", _windowSize, _bufferSize, _toFilename);
 }
 
-void UDPServer::sendFilenameAck(int newPort)
+void UDPServer::sendFilenameAck()
 {
 	__PRINTF_DBG("Sending FILENAME_ACK pdu\n");
 	PDU pdu;
 	pdu.setFlag(FILENAME_ACK);
 	pdu.setSeqNum(_pduSeqNum);
-	pdu.addPayload((unsigned char*)&newPort, sizeof(newPort));
+	pdu.addPayload((unsigned char*)&_portNumber, sizeof(_portNumber));
 	unsigned char* data = pdu.createPDU();
 
-	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\tnewPort: %d\n",
-		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum(), newPort);
+	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\tportNumber: %d\n",
+		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum(), _portNumber);
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }
 
@@ -156,11 +153,6 @@ void UDPServer::sendFilenameErr()
 	__PRINTF_DBG("FILENAME_ERR PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n",
 		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
-}
-
-void processNewClient()
-{
-	__PRINTF_DBG("Processing New Client\n");
 }
 
 void UDPServer::openToFile(char* toFilename)
