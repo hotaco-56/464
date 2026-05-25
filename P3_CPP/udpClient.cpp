@@ -21,8 +21,9 @@ void UDPClient::run()
 	if (!setup())
 		return;
 
+	while(1);
 	// start data transfer
-	sendFilenamePDU();
+	// sendFilenamePDU();
 }
 
 bool UDPClient::setup()

@@ -16,7 +16,10 @@ UDPServer::~UDPServer()
 	else
 		__PRINTF_DBG("Server deconstructor called\n");
 
+	__PRINTF_DBG("closed socket: %d\n", _socketNum);
+	__PRINTF_DBG("closed file: %s\n", _toFilename);
     close(_socketNum);
+	_toFile.close();
 }
 
 void UDPServer::run()
@@ -33,7 +36,9 @@ void UDPServer::run()
 			continue;
 
 		// start data transfer
-		pollCall(1000);
+		__PRINTF_DBG("========Start Data Transfer======\n");
+		if (pollCall(1000) != _socketNum)
+			__PRINTF_DBG("Timout occured\n");
 		return;
 	}
 }
@@ -143,7 +148,7 @@ void UDPServer::sendFilenameErr()
 	pdu.addPayload(&padding, 1);
 	unsigned char* data = pdu.createPDU();
 
-	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n",
+	__PRINTF_DBG("FILENAME_ERR PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n",
 		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }
@@ -155,10 +160,16 @@ void processNewClient()
 
 void UDPServer::openToFile(char* toFilename)
 {
-	_toFile.open(_toFilename);
-	
-	if (!_toFile) {
-		printf("File %s not found\n", toFilename);
-		sendFilenameErr();
-	}
+    if (_toFile.is_open()) {
+        _toFile.close();
+    }
+
+    _toFile.clear(); // clear any previous fail state
+
+    _toFile.open(toFilename, std::ios::binary);
+
+    if (!_toFile) {
+        printf("Failed to open file %s\n", toFilename);
+        sendFilenameErr();
+    }
 }
