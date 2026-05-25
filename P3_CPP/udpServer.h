@@ -37,9 +37,11 @@ private:
 
     struct sockaddr_in6 _client;
 
+    bool _isChild = false;
+
     std::ofstream openToFile(char* toFilename);
     void setup();
-    uint8_t recvPDU();
+    void recvPDU(); // returns pdu flag
     void parseFilenamePDU(PDU pdu);
     void sendFilenameAck(int);
     void sendFilenameErr();

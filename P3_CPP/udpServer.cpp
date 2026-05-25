@@ -10,7 +10,12 @@ UDPServer::UDPServer(float errRate = 0.0f, int portNumber = 0) :
 
 UDPServer::~UDPServer()
 {
-	__PRINTF_DBG("Server deconstructor called\n");
+
+	if (_isChild)
+		__PRINTF_DBG("Child terminated\n");
+	else
+		__PRINTF_DBG("Server deconstructor called\n");
+
     close(_socketNum);
 }
 
@@ -21,15 +26,39 @@ void UDPServer::run()
 
 	while(1) {
 		waitpid(-1, nullptr, WNOHANG);
-		setup();
+		if (pollCall(0))
+			recvPDU();
+
+		if (!_isChild)
+			continue;
+
+		// start data transfer
+		pollCall(1000);
+		return;
 	}
 }
 
-void UDPServer::setup()
+void UDPServer::recvPDU()
 {
-	while(1) {
-		if (recvPDU() == FILENAME) {
-			
+	int dataLen = 0;
+	unsigned char data[MAX_PDU_SIZE];
+	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_client, (int*)&_clientAddrLen);
+	PDU pdu(data, dataLen);
+
+	// throw packet if bad checksum
+	if (pdu.calcChksum() != 0) {
+		__PRINTF_DBG("Bad checksum (%d) on: seqNum %d\n", pdu.calcChksum(), pdu.getSeqNum());
+		return;
+	}
+	
+	_pduSeqNum = ntohl(pdu.getSeqNum()) + 1;
+
+	switch (pdu.getFlag())
+	{
+		case FILENAME: // setup
+		{
+			parseFilenamePDU(pdu);
+
 			// try open toFile
 			if (!openToFile(_toFilename)) {
 				sendFilenameErr();
@@ -41,46 +70,29 @@ void UDPServer::setup()
 
 			if (pid != 0) { 
 				__PRINTF_DBG("Child Process Created: %d\n", pid);
+				return;
 			}
 			else { // in child
+				_isChild = true;
 				int newPort = 0;
 				int newSocketNum = udpServerSetup(newPort);
 				close(_socketNum);
 				_socketNum = newSocketNum;
 				_portNumber = newPort;
+
 				sendFilenameAck(newPort);
 			}
+			break;
 		}
-	}
-}
-
-uint8_t UDPServer::recvPDU()
-{
-	int dataLen = 0;
-	unsigned char data[MAX_PDU_SIZE];
-	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_client, (int*)&_clientAddrLen);
-	PDU pdu(data, dataLen);
-
-	if (pdu.calcChksum() != 0) {
-		__PRINTF_DBG("Bad checksum (%d) on: seqNum %d\n", pdu.calcChksum(), pdu.getSeqNum());
-		return 0;
-	}
-	
-	_pduSeqNum = ntohl(pdu.getSeqNum()) + 1;
-
-	switch (pdu.getFlag())
-	{
-		case FILENAME:
+		
+		case DATA:
 		{
-			parseFilenamePDU(pdu);
 			break;
 		}
 		
 		default:
 			break;
 	}
-
-	return pdu.getFlag();
 }
 
 void UDPServer::parseFilenamePDU(PDU pdu)
@@ -117,7 +129,7 @@ void UDPServer::sendFilenameAck(int newPort)
 	pdu.addPayload((unsigned char*)&newPort, sizeof(newPort));
 	unsigned char* data = pdu.createPDU();
 
-	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\tnewSocketNum: %d\n",
+	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\tnewPort: %d\n",
 		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum(), newPort);
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }

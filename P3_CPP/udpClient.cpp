@@ -20,6 +20,9 @@ void UDPClient::run()
 
 	if (!setup())
 		return;
+
+	// start data transfer
+	sendFilenamePDU();
 }
 
 bool UDPClient::setup()
@@ -56,6 +59,12 @@ uint8_t UDPClient::recvPDU()
 		case FILENAME_ACK:
 		{
 			__PRINTF_DBG("Received FILENAME_ACK pdu\n");
+			unsigned char* payload = pdu.getPayload();
+			int newPort = 0;
+			memcpy(&newPort, payload, pdu.getPayloadLen());
+			_args.remotePort = newPort;
+			_socketNum = setupUdpClientToServer(&_server, _args.remoteMachine, _args.remotePort);
+			__PRINTF_DBG("Connected to new socket with port: %d\n", _args.remotePort);
 			break;
 		}
 		case FILENAME_ERR:
