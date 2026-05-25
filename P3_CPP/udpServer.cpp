@@ -1,6 +1,5 @@
 #include "udpServer.h"
 
-void setupSignalHandlers();
 UDPServer::UDPServer(float errRate = 0.0f, int portNumber = 0) : 
 	_errRate(errRate),
 	_portNumber(portNumber),
@@ -152,28 +151,6 @@ void UDPServer::sendFilenameErr()
 void processNewClient()
 {
 	__PRINTF_DBG("Processing New Client\n");
-}
-
-void sigchldHandler(int signo)
-{
-	pid_t childPID;
-    while ((childPID = waitpid(-1, nullptr, WNOHANG)) > 0) {
-		  printf("Child %d terminated\n", childPID);
-    }
-}
-
-void setupSignalHandlers()
-{
-    struct sigaction sa;
-
-    sa.sa_handler = sigchldHandler;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART;
-
-    if (sigaction(SIGCHLD, &sa, nullptr) == -1) {
-        perror("sigaction");
-        exit(1);
-    }
 }
 
 std::ofstream UDPServer::openToFile(char* toFilename)
