@@ -5,11 +5,12 @@ UDPServer::UDPServer(float errRate = 0.0f, int portNumber = 0) :
 	_portNumber(portNumber),
 	_socketNum(udpServerSetup(portNumber))
 {
+	setupPollSet();
+	addToPollSet(_socketNum);
 }
 
 UDPServer::~UDPServer()
 {
-
 	if (_isChild)
 		__PRINTF_DBG("Child terminated\n");
 	else
@@ -20,9 +21,6 @@ UDPServer::~UDPServer()
 
 void UDPServer::run()
 {
-	setupPollSet();
-	addToPollSet(_socketNum);
-
 	while(1) {
 		pid_t terminatedProcess = waitpid(-1, nullptr, WNOHANG);
 		if (terminatedProcess > 0)
@@ -62,10 +60,9 @@ void UDPServer::recvPDU()
 			parseFilenamePDU(pdu);
 
 			// try open toFile
-			if (!openToFile(_toFilename)) {
-				sendFilenameErr();
+			openToFile(_toFilename);
+			if (!_toFile)
 				return;
-			}
 
 			pid_t pid = 0;
 			pid = fork();
@@ -156,13 +153,12 @@ void processNewClient()
 	__PRINTF_DBG("Processing New Client\n");
 }
 
-std::ofstream UDPServer::openToFile(char* toFilename)
+void UDPServer::openToFile(char* toFilename)
 {
-	std::ofstream toFile(toFilename);
+	_toFile.open(_toFilename);
 	
-	if (!toFile) {
+	if (!_toFile) {
 		printf("File %s not found\n", toFilename);
+		sendFilenameErr();
 	}
-
-	return toFile;
 }

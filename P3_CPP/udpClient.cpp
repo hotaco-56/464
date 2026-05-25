@@ -31,10 +31,13 @@ bool UDPClient::setup()
 	while (retransmitCount < MAX_RETRANSMIT_COUNT) {
 		sendFilenamePDU();
 		if (pollCall(1000)  == _socketNum) {
-			if (recvPDU() == FILENAME_ACK)
+			uint8_t flag = recvPDU();
+			if (flag == FILENAME_ACK)
 				return true;
-			if (recvPDU() == FILENAME_ERR)
-				return false;
+			if (flag == FILENAME_ERR) {
+				this->~UDPClient();
+				exit(1);
+			}
 		}
 		retransmitCount++;
 	}

@@ -39,7 +39,9 @@ private:
 
     bool _isChild = false;
 
-    std::ofstream openToFile(char* toFilename);
+    std::ofstream _toFile;
+
+    void openToFile(char* toFilename);
     void setup();
     void recvPDU(); // returns pdu flag
     void parseFilenamePDU(PDU pdu);
