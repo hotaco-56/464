@@ -4,6 +4,7 @@
 #include <inttypes.h>
 
 #include "pdu.h"
+#include "vars.h"
 
 class FIFOBuffer
 {
@@ -14,8 +15,8 @@ private:
 public:
     FIFOBuffer(uint32_t size);
     ~FIFOBuffer();
-    inline void add(PDU* pdu) { *_pduBuffer = *pdu; }
-    inline PDU get(uint32_t i) { return *(_pduBuffer + (sizeof(PDU) * i)); }
+    void add(PDU pdu); 
+    inline PDU get(uint32_t i) { return _pduBuffer[i]; }
 };
 
 #endif

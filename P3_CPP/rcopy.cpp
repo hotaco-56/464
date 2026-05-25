@@ -53,7 +53,7 @@ void checkArgs(int argc, char * argv[], UDPClientArgs& args)
 	
 	args.fromFilename = argv[1];
 	args.toFilename = argv[2];
-	args.windowSize = atol(argv[3]);
+	args.windowSize = atoll(argv[3]);
 	args.bufferSize = atol(argv[4]);
 	args.errorRate = atof(argv[5]);
 	args.remoteMachine = argv[6];

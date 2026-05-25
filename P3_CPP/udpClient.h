@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <memory>
 
 #include "gethostbyname.h"
 #include "networks.h"
@@ -47,8 +48,10 @@ private:
     struct sockaddr_in6 _server;
 
     Window _window;
+    uint16_t _pduSeqNum = 0;
 
-    std::ifstream openFromFile();
+    std::ifstream _fromFile;
+    void openFromFile();
     bool setup();
     void sendFilenamePDU(void);
     void sendDataPDU(void);

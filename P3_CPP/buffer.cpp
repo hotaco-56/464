@@ -3,20 +3,26 @@
 FIFOBuffer::FIFOBuffer(uint32_t size)
 {
     _bufferSize = size;
-    _pduBuffer = (PDU*)malloc(size * sizeof(PDU));
+    _pduBuffer =  new PDU[size];
 }
 
 FIFOBuffer::~FIFOBuffer()
 {
-    free(_pduBuffer);
+    delete[] _pduBuffer;
+}
+
+void FIFOBuffer::add(PDU pdu)
+{
+    shiftBuffer();
+    _pduBuffer[0] = pdu;
 }
 
 void FIFOBuffer::shiftBuffer()
 {
-    uint32_t pduSize = sizeof(PDU);
-    PDU* firstPDUAddr = _pduBuffer + ((_bufferSize-1) * pduSize); // first is last
+    if (_bufferSize <= 1)
+        return;
 
-    for (PDU* currPDU = firstPDUAddr; currPDU > _pduBuffer; currPDU -= pduSize) {
-        *currPDU = *(currPDU - pduSize); // copy assignment
+    for (uint32_t i = _bufferSize - 1; i > 0; --i) {
+        _pduBuffer[i] = _pduBuffer[i - 1];
     }
 }

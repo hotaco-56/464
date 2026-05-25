@@ -1,12 +1,6 @@
 #ifndef PDU_H
 #define PDU_H
 
-#ifndef __DEBUG_
-#define __PRINTF_DBG (void)
-#else
-#define __PRINTF_DBG printf
-#endif
-
 #include "inttypes.h"
 // #include <stdio.h>
 // #include <stdlib.h>
@@ -57,6 +51,7 @@ private:
     uint16_t _payloadLen = 0;
     unsigned char _payload[MAX_PAYLOAD_SIZE] = {0};
     unsigned char _pdu[MAX_PDU_SIZE] = {0};
+    bool _acked = false;
 
     // copy data to header section of pdu
     inline void headerCpy(unsigned char* dest) { memcpy(dest, &_header, HEADER_SIZE); }
@@ -69,6 +64,9 @@ public:
     ~PDU();
 
     PDU& operator=(const PDU& other); // first time using this fr holy
+
+    inline void ack() { _acked = true; }
+    inline bool isAcked() const { return _acked; }
 
     inline uint16_t calcChksum() { return (uint16_t)in_cksum((unsigned short*)_pdu, getPDULen()); }
     inline void clearChksum(void) { _header.chksum = 0; }

@@ -22,14 +22,33 @@ UDPClient::~UDPClient()
 
 void UDPClient::run()
 {
-	std::ifstream fromFile = openFromFile();
+	// try open fromFile
+	openFromFile();
+	if (!_fromFile)
+		return;
 
 	if (!setup())
 		return;
 
-	while(1);
 	// start data transfer
-	// sendFilenamePDU();
+	__PRINTF_DBG("============= DATA TRANS. ==============\n");
+	while (!_window.closed()) {
+		auto buffer = std::make_unique<unsigned char[]>(_args.bufferSize);
+
+		_fromFile.read((char*)(buffer.get()), _args.bufferSize);
+		std::streamsize bytesRead = _fromFile.gcount();
+
+		__PRINTF_DBG("Read %d byes from %s\n", (int)bytesRead, _args.fromFilename);
+		if (bytesRead > 0) {
+			PDU dataPDU;
+			dataPDU.setFlag(DATA);
+			dataPDU.setSeqNum(++_pduSeqNum);
+			dataPDU.addPayload((unsigned char*)buffer.get(), bytesRead);
+			auto pdu = dataPDU.createPDU();
+
+			_window.update(dataPDU);
+		}
+	}
 }
 
 bool UDPClient::setup()
@@ -58,6 +77,8 @@ uint8_t UDPClient::recvPDU()
 	int dataLen = 0;
 	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_server, &_serverAddrLen);
 	PDU pdu(data, dataLen);
+
+	_pduSeqNum = ntohl(pdu.getSeqNum()) + 1;
 
 	if (pdu.calcChksum() != 0) {
 		__PRINTF_DBG("Bad checksum on: seqNum %d\n", pdu.getSeqNum());
@@ -104,7 +125,7 @@ void UDPClient::sendFilenamePDU()
 	pdu.addPayload((unsigned char*)_args.toFilename, strlen(_args.toFilename));
 	unsigned char* data = pdu.createPDU();
 
-	__PRINTF_DBG("FILENAME PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), pdu.getSeqNum(), pdu.getChksum());
+	__PRINTF_DBG("FILENAME PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
 }
 
@@ -113,15 +134,17 @@ void UDPClient::sendDataPDU()
 	__PRINTF_DBG("sending data pdu\n");
 }
 
-std::ifstream UDPClient::openFromFile()
+void UDPClient::openFromFile()
 {
-	std::ifstream fromFile(_args.fromFilename);
-
-	if (!fromFile) {
-        printf("File %s not found\n", _args.fromFilename);
-		this->~UDPClient();
-		exit(1);
+    if (_fromFile.is_open()) {
+        _fromFile.close();
     }
 
-	return fromFile;
+    _fromFile.clear(); // clear any previous fail state
+
+    _fromFile.open(_args.fromFilename, std::ios::binary);
+
+    if (!_fromFile) {
+        printf("Failed to open file %s\n", _args.fromFilename);
+    }
 }

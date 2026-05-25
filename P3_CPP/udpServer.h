@@ -21,6 +21,7 @@
 #include "cpe464.h" // for sendErr_init()
 
 #include "vars.h"
+#include "window.h"
 
 class UDPServer
 {
