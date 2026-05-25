@@ -63,8 +63,6 @@ public:
     PDU(unsigned char* PDU, uint16_t pduLen);
     ~PDU();
 
-    PDU& operator=(const PDU& other); // first time using this fr holy
-
     inline void ack() { _acked = true; }
     inline bool isAcked() const { return _acked; }
 
