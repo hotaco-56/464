@@ -24,6 +24,7 @@
 #include "pdu.h"
 #include "pollLib.h"
 #include "window.h"
+#include "cpe464.h" // for sendErr_init()
 
 #include "vars.h"
 

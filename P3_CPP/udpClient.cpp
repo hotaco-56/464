@@ -6,6 +6,12 @@ UDPClient::UDPClient(UDPClientArgs& args) :
 	_window(_args.windowSize, _args.bufferSize)
 {
 	addToPollSet(_socketNum);
+
+	#ifdef __SEND_ERR_
+	sendErr_init((double)_args.errorRate, DROP_ON, FLIP_ON, __SEND_ERR_DBG_, RSEED_ON);
+	#else
+	// sendErr_init((double)_args.errorRate, DROP_OFF, FLIP_OFF, __SEND_ERR_DBG_, RSEED_OFF);
+	#endif
 }
 
 UDPClient::~UDPClient()

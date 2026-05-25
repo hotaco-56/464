@@ -7,6 +7,11 @@ UDPServer::UDPServer(float errRate = 0.0f, int portNumber = 0) :
 {
 	setupPollSet();
 	addToPollSet(_socketNum);
+	#ifdef __SEND_ERR_
+	sendErr_init((double)_errRate, DROP_ON, FLIP_ON, __SEND_ERR_DBG_, RSEED_ON);
+	#else
+	sendErr_init((double)_errRate, DROP_OFF, FLIP_OFF, __SEND_ERR_DBG_, RSEED_OFF);
+	#endif
 }
 
 UDPServer::~UDPServer()
@@ -82,6 +87,12 @@ void UDPServer::recvPDU()
 				_isChild = true;
 				
 				// child needs to reconfigure server for new socket
+				#ifdef __SEND_ERR_
+				sendErr_init((double)_errRate, DROP_ON, FLIP_ON, __SEND_ERR_DBG_, RSEED_ON);
+				#else
+				sendErr_init((double)_errRate, DROP_OFF, FLIP_OFF, __SEND_ERR_DBG_, RSEED_OFF);
+				#endif
+
 				removeFromPollSet(_socketNum);
 				close(_socketNum);
 				_socketNum = udpServerSetup(_portNumber);

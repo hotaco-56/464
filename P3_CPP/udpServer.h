@@ -18,6 +18,7 @@
 #include "safeUtil.h"
 #include "pollLib.h"
 #include "pdu.h"
+#include "cpe464.h" // for sendErr_init()
 
 #include "vars.h"
 
