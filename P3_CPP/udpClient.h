@@ -23,6 +23,7 @@
 #include "safeUtil.h"
 #include "pdu.h"
 #include "pollLib.h"
+#include "window.h"
 
 #include "vars.h"
 
@@ -40,20 +41,17 @@ class UDPClient
 {
 private:
     UDPClientArgs _args;
-
     int _serverAddrLen = (int)sizeof(struct sockaddr_in6);
-
     int _socketNum;
     struct sockaddr_in6 _server;
 
-    uint8_t _retransmitCount = 0;
+    Window _window;
 
     std::ifstream openFromFile();
-    int readFromStdin(char * buffer);
+    bool setup();
     void sendFilenamePDU(void);
     void sendDataPDU(void);
-    void retransmitCallback(void(*func)());
-    void recvPDU();
+    uint8_t recvPDU();
 public:
     UDPClient(UDPClientArgs& args);
     ~UDPClient();

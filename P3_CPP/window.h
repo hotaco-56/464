@@ -9,17 +9,19 @@
 class Window
 {
 private:
-    uint32_t _lower;
-    uint32_t _current;
-    uint32_t _upper;
-
     FIFOBuffer _buffer;
+    uint32_t _lower = 0;
+    uint32_t _current = 0;
+    uint32_t _upper = 0;
+    uint32_t _size;
 
 public:
-    Window(uint32_t bufferSize);
+    Window(uint32_t windowSize, uint32_t bufferSize);
     ~Window();
 
-    void update();
+    void update(PDU& pdu);
+
+    inline bool closed() const { return _current == _upper; }
 };
 
 #endif

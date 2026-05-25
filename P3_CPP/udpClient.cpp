@@ -1,20 +1,9 @@
 #include "udpClient.h"
 
-void UDPClient::retransmitCallback(void (*send)())
-{
-	bool ackReceived = false;
-	int retransmitCount = 0;
-	while (!ackReceived)
-	{
-		if (++retransmitCount > 10)
-			this->~UDPClient();
-		send();
-	}
-}
-
 UDPClient::UDPClient(UDPClientArgs& args) : 
 	_args(args),
-	_socketNum(setupUdpClientToServer(&_server, args.remoteMachine, args.remotePort))
+	_socketNum(setupUdpClientToServer(&_server, args.remoteMachine, args.remotePort)),
+	_window(_args.windowSize, _args.bufferSize)
 {
 	addToPollSet(_socketNum);
 }
@@ -29,20 +18,38 @@ void UDPClient::run()
 {
 	std::ifstream fromFile = openFromFile();
 
-	// send filename packet
-	sendFilenamePDU();
-	if (pollCall(0) == _socketNum) { //poll for ack
-		recvPDU();
-	}
+	if (!setup())
+		return;
 }
 
-void UDPClient::recvPDU()
+bool UDPClient::setup()
+{
+	uint8_t retransmitCount = 0;
+	while (retransmitCount < MAX_RETRANSMIT_COUNT) {
+		sendFilenamePDU();
+		if (pollCall(1000)  == _socketNum) {
+			if (recvPDU() == FILENAME_ACK)
+				return true;
+			if (recvPDU() == FILENAME_ERR)
+				return false;
+		}
+		retransmitCount++;
+	}
+	__PRINTF_DBG("Setup failed: retransmit count: %d\n", retransmitCount);
+	return false;
+}
+
+uint8_t UDPClient::recvPDU()
 {
 	unsigned char data[MAX_PDU_SIZE] = {0};
 	int dataLen = 0;
 	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_server, &_serverAddrLen);
-
 	PDU pdu(data, dataLen);
+
+	if (pdu.calcChksum() != 0) {
+		__PRINTF_DBG("Bad checksum on: seqNum %d\n", pdu.getSeqNum());
+		return 0;
+	}
 
 	switch (pdu.getFlag())
 	{
@@ -51,9 +58,16 @@ void UDPClient::recvPDU()
 			__PRINTF_DBG("Received FILENAME_ACK pdu\n");
 			break;
 		}
+		case FILENAME_ERR:
+		{
+			__PRINTF_DBG("Received FILENAME_ERR pdu\n");
+			break;
+		}
 		default:
 			break;
 	}
+
+	return pdu.getFlag();
 }
 
 /*
@@ -69,7 +83,7 @@ void UDPClient::sendFilenamePDU()
 	pdu.addPayload((unsigned char*)&_args.windowSize, sizeof(_args.windowSize));
 	pdu.addPayload((unsigned char*)&_args.bufferSize, sizeof(_args.bufferSize));
 	pdu.addPayload((unsigned char*)_args.toFilename, strlen(_args.toFilename));
-	unsigned char* data = pdu.getPDU();
+	unsigned char* data = pdu.createPDU();
 
 	__PRINTF_DBG("FILENAME PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), pdu.getSeqNum(), pdu.getChksum());
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);

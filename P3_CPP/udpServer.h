@@ -10,6 +10,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <fstream>
+#include <iostream>
 
 #include "gethostbyname.h"
 #include "networks.h"
@@ -28,23 +30,22 @@ private:
     int _portNumber;
     int _socketNum;
 
-    uint16_t _windowSize = 0;
+    uint32_t _windowSize = 0;
     uint16_t _bufferSize = 0;
     char _toFilename[MAX_FILENAME_LEN + 1];
     uint16_t _pduSeqNum = 0;
 
     struct sockaddr_in6 _client;
 
-    void recvFilename();
-    void sendFilenameAck();
+    std::ofstream openToFile(char* toFilename);
+    void setup();
+    uint8_t recvPDU();
+    void parseFilenamePDU(PDU pdu);
+    void sendFilenameAck(int);
+    void sendFilenameErr();
     void runInternal();
 public:
-    UDPServer(float errRate = 0.0f, int portNumber = 0) : 
-        _errRate(errRate),
-        _portNumber(portNumber),
-        _socketNum(udpServerSetup(portNumber))
-    {
-    }
+    UDPServer(float err, int port);
     ~UDPServer();
     void run();
     inline int getSocketNum(void) { return _socketNum; }

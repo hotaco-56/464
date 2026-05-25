@@ -26,7 +26,7 @@ int tcpAccept(int mainServerSocket, int debugFlag);
 int tcpClientSetup(char * serverName, char * serverPort, int debugFlag);
 
 // For UDP Server and Client
-int udpServerSetup(int serverPort);
+int udpServerSetup(int& serverPort);
 int setupUdpClientToServer(struct sockaddr_in6 *serverAddress, char * hostName, int serverPort);
 int createUdpSocket();
 

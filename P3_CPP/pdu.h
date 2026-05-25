@@ -38,6 +38,7 @@
 #define SREJ           6U
 #define FILENAME       7U
 #define FILENAME_ACK   8U
+#define FILENAME_ERR   32U
 
 #define MAX_PAYLOAD_SIZE 1400UL
 #define HEADER_SIZE 7U
@@ -69,7 +70,7 @@ public:
 
     PDU& operator=(const PDU& other); // first time using this fr holy
 
-    inline void calcChksum(uint16_t pduLen) { _header.chksum = (uint16_t)in_cksum((unsigned short*)_pdu, pduLen); }
+    inline uint16_t calcChksum() { return (uint16_t)in_cksum((unsigned short*)_pdu, getPDULen()); }
     inline void clearChksum(void) { _header.chksum = 0; }
     inline uint16_t getChksum(void) const { return _header.chksum; }
 
@@ -87,10 +88,10 @@ public:
     inline unsigned char* getPayload() { return _payload; }
     inline uint16_t getPayloadLen() const { return _payloadLen; }
     
-    inline unsigned char* getPDU() { 
+    inline unsigned char* createPDU() { 
         headerCpy(_pdu);
         payloadCpy(_pdu);
-        calcChksum(getPDULen());
+        _header.chksum = calcChksum();
         headerCpy(_pdu); // copy new header with chksum into pdu
         return _pdu; 
     }

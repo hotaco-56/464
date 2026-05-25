@@ -1,6 +1,12 @@
 #include "udpServer.h"
 
 void setupSignalHandlers();
+UDPServer::UDPServer(float errRate = 0.0f, int portNumber = 0) : 
+	_errRate(errRate),
+	_portNumber(portNumber),
+	_socketNum(udpServerSetup(portNumber))
+{
+}
 
 UDPServer::~UDPServer()
 {
@@ -10,56 +16,91 @@ UDPServer::~UDPServer()
 
 void UDPServer::run()
 {
-	// setupSignalHandlers();
 	setupPollSet();
 	addToPollSet(_socketNum);
 
 	while(1) {
-		pid_t pid = 0;
-		
 		waitpid(-1, nullptr, WNOHANG);
-		if (pollCall(-1) == _socketNum) {
-			pid = fork();
-			if (pid == 0) { // inside child process
-				runInternal();
+		setup();
+	}
+}
+
+void UDPServer::setup()
+{
+	while(1) {
+		if (recvPDU() == FILENAME) {
+			
+			// try open toFile
+			if (!openToFile(_toFilename)) {
+				sendFilenameErr();
 				return;
 			}
-			else {
-				printf("Child Process created: %d\n", pid);
+
+			pid_t pid = 0;
+			pid = fork();
+
+			if (pid != 0) { 
+				__PRINTF_DBG("Child Process Created: %d\n", pid);
+			}
+			else { // in child
+				int newPort = 0;
+				int newSocketNum = udpServerSetup(newPort);
+				close(_socketNum);
+				_socketNum = newSocketNum;
+				_portNumber = newPort;
+				sendFilenameAck(newPort);
 			}
 		}
 	}
 }
 
-void UDPServer::runInternal()
-{
-	recvFilename();
-	sendFilenameAck();
-}
-
-void UDPServer::recvFilename()
+uint8_t UDPServer::recvPDU()
 {
 	int dataLen = 0;
 	unsigned char data[MAX_PDU_SIZE];
 	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_client, (int*)&_clientAddrLen);
 	PDU pdu(data, dataLen);
+
+	if (pdu.calcChksum() != 0) {
+		__PRINTF_DBG("Bad checksum (%d) on: seqNum %d\n", pdu.calcChksum(), pdu.getSeqNum());
+		return 0;
+	}
+	
 	_pduSeqNum = ntohl(pdu.getSeqNum()) + 1;
 
+	switch (pdu.getFlag())
+	{
+		case FILENAME:
+		{
+			parseFilenamePDU(pdu);
+			break;
+		}
+		
+		default:
+			break;
+	}
+
+	return pdu.getFlag();
+}
+
+void UDPServer::parseFilenamePDU(PDU pdu)
+{
 	// parse payload
 	unsigned char* payload = pdu.getPayload();
+	uint16_t fileNameLen = pdu.getPayloadLen() - sizeof(_windowSize) - sizeof(_bufferSize);
 
 	memcpy(&_windowSize, payload, sizeof(_windowSize));
-	payload += 2;
+	payload += sizeof(_windowSize);
 	memcpy(&_bufferSize, payload, sizeof(_bufferSize));
-	payload += 2;
-	memcpy(_toFilename, payload, dataLen - 4 - HEADER_SIZE);
-	_toFilename[dataLen - 4 - HEADER_SIZE] = '\0';
+	payload += sizeof(_bufferSize);
+	memcpy(_toFilename, payload, fileNameLen);
+	_toFilename[fileNameLen] = '\0';
 
 	__PRINTF_DBG("Received filename pdu from client with ");
 	#ifdef __DEBUG_
 	printIPInfo(&_client);
 	#endif
-	__PRINTF_DBG("\tPDULen: %d \'%s\'\n\tPayloadLen: %d\n", dataLen, data, pdu.getPayloadLen());
+	__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
 	__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
 		pdu.getFlag(),
 		pdu.getSeqNum(), 
@@ -67,15 +108,32 @@ void UDPServer::recvFilename()
 	__PRINTF_DBG("\twindowSize: %d\n\tbufferSize: %d\n\tfileName: %s\n", _windowSize, _bufferSize, _toFilename);
 }
 
-void UDPServer::sendFilenameAck()
+void UDPServer::sendFilenameAck(int newPort)
 {
 	__PRINTF_DBG("Sending FILENAME_ACK pdu\n");
 	PDU pdu;
 	pdu.setFlag(FILENAME_ACK);
 	pdu.setSeqNum(_pduSeqNum);
-	unsigned char* data = pdu.getPDU();
+	pdu.addPayload((unsigned char*)&newPort, sizeof(newPort));
+	unsigned char* data = pdu.createPDU();
 
-	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
+	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\tnewSocketNum: %d\n",
+		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum(), newPort);
+	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
+}
+
+void UDPServer::sendFilenameErr()
+{
+	unsigned char padding = (unsigned char)0; // for min pdusize = 8bytes
+	__PRINTF_DBG("Sending FILENAME_ERR pdu\n");
+	PDU pdu;
+	pdu.setFlag(FILENAME_ERR);
+	pdu.setSeqNum(_pduSeqNum);
+	pdu.addPayload(&padding, 1);
+	unsigned char* data = pdu.createPDU();
+
+	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n",
+		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }
 
@@ -104,4 +162,15 @@ void setupSignalHandlers()
         perror("sigaction");
         exit(1);
     }
+}
+
+std::ofstream UDPServer::openToFile(char* toFilename)
+{
+	std::ofstream toFile(toFilename);
+	
+	if (!toFile) {
+		printf("File %s not found\n", toFilename);
+	}
+
+	return toFile;
 }

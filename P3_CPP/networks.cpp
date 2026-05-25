@@ -139,7 +139,7 @@ int tcpClientSetup(char * serverName, char * serverPort, int debugFlag)
 // This funciton creates a UDP socket on the server side and binds to that socket.  
 // It prints out the port number and returns the socket number.
 
-int udpServerSetup(int serverPort)
+int udpServerSetup(int& serverPort)
 {
 	struct sockaddr_in6 serverAddress;
 	int socketNum = 0;
@@ -165,6 +165,8 @@ int udpServerSetup(int serverPort)
 	serverAddrLen = sizeof(serverAddress);
 	getsockname(socketNum,(struct sockaddr *) &serverAddress,  (socklen_t *) &serverAddrLen);
 	printf("Server using Port #: %d\n", ntohs(serverAddress.sin6_port));
+
+	serverPort = ntohs(serverAddress.sin6_port);
 
 	return socketNum;	
 	
