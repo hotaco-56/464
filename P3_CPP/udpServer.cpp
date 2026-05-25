@@ -43,8 +43,12 @@ void UDPServer::run()
 
 		// start data transfer
 		__PRINTF_DBG("======================= DATA TRANS. ========================\n");
-		if (pollCall(1000) == -1)
-			__PRINTF_DBG("Timout occured\n");
+		while (1) {
+			if (pollCall(1000) == -1)
+				__PRINTF_DBG("Timeout occured\n");
+			else
+				recvPDU();
+		}
 		return;
 	}
 }
@@ -96,6 +100,7 @@ void UDPServer::recvPDU()
 				removeFromPollSet(_socketNum);
 				close(_socketNum);
 				_socketNum = udpServerSetup(_portNumber);
+				addToPollSet(_socketNum);
 
 				sendFilenameAck();
 			}
@@ -104,6 +109,12 @@ void UDPServer::recvPDU()
 		
 		case DATA:
 		{
+			__PRINTF_DBG("DATA PDU receved\n");
+			__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
+			__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+				pdu.getFlag(),
+				ntohl(pdu.getSeqNum()), 
+				pdu.getChksum());
 			break;
 		}
 		
@@ -132,7 +143,7 @@ void UDPServer::parseFilenamePDU(PDU pdu)
 	__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
 	__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
 		pdu.getFlag(),
-		pdu.getSeqNum(), 
+		ntohl(pdu.getSeqNum()), 
 		pdu.getChksum());
 	__PRINTF_DBG("\twindowSize: %d\n\tbufferSize: %d\n\tfileName: %s\n", _windowSize, _bufferSize, _toFilename);
 }

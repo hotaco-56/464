@@ -53,8 +53,8 @@ private:
     std::ifstream _fromFile;
     void openFromFile();
     bool setup();
-    void sendFilenamePDU(void);
-    void sendDataPDU(void);
+    void sendFilenamePDU();
+    void sendDataPDU(unsigned char* pdu);
     uint8_t recvPDU();
 public:
     UDPClient(UDPClientArgs& args);

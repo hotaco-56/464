@@ -44,11 +44,17 @@ void UDPClient::run()
 			dataPDU.setFlag(DATA);
 			dataPDU.setSeqNum(++_pduSeqNum);
 			dataPDU.addPayload((unsigned char*)buffer.get(), bytesRead);
-			auto pdu = dataPDU.createPDU();
+			unsigned char* pdu = dataPDU.createPDU();
 
 			_window.update(dataPDU);
+			safeSendto(_socketNum, pdu, dataPDU.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
+		}
+		else {
+			__PRINTF_DBG("EOF reached\n");
+			break;
 		}
 	}
+	__PRINTF_DBG("Window closed\n");
 }
 
 bool UDPClient::setup()
@@ -127,11 +133,6 @@ void UDPClient::sendFilenamePDU()
 
 	__PRINTF_DBG("FILENAME PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
-}
-
-void UDPClient::sendDataPDU()
-{
-	__PRINTF_DBG("sending data pdu\n");
 }
 
 void UDPClient::openFromFile()
