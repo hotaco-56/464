@@ -24,8 +24,11 @@ void UDPServer::run()
 	addToPollSet(_socketNum);
 
 	while(1) {
-		waitpid(-1, nullptr, WNOHANG);
-		if (pollCall(0))
+		pid_t terminatedProcess = waitpid(-1, nullptr, WNOHANG);
+		if (terminatedProcess > 0)
+			__PRINTF_DBG("Server cleaned up child process: %d\n", terminatedProcess);
+
+		if (pollCall(0) == _socketNum)
 			recvPDU();
 
 		if (!_isChild)
