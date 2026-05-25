@@ -11,13 +11,14 @@ UDPServer::UDPServer(float errRate = 0.0f, int portNumber = 0) :
 
 UDPServer::~UDPServer()
 {
+	__PRINTF_DBG("======================= CLEANUP ========================\n");
 	if (_isChild)
-		__PRINTF_DBG("Child terminated\n");
+		__PRINTF_DBG("\tChild terminated\n");
 	else
-		__PRINTF_DBG("Server deconstructor called\n");
+		__PRINTF_DBG("\tServer deconstructor called\n");
 
-	__PRINTF_DBG("closed socket: %d\n", _socketNum);
-	__PRINTF_DBG("closed file: %s\n", _toFilename);
+	__PRINTF_DBG("\tClosed socket: %d\n", _socketNum);
+	__PRINTF_DBG("\tClosed file: %s\n", _toFilename);
     close(_socketNum);
 	_toFile.close();
 }
@@ -36,8 +37,8 @@ void UDPServer::run()
 			continue;
 
 		// start data transfer
-		__PRINTF_DBG("========Start Data Transfer======\n");
-		if (pollCall(1000) != _socketNum)
+		__PRINTF_DBG("======================= DATA TRANS. ========================\n");
+		if (pollCall(1000) == -1)
 			__PRINTF_DBG("Timout occured\n");
 		return;
 	}
@@ -62,6 +63,7 @@ void UDPServer::recvPDU()
 	{
 		case FILENAME: // setup
 		{
+			__PRINTF_DBG("======================= SETUP ========================\n");
 			parseFilenamePDU(pdu);
 
 			// try open toFile
@@ -78,8 +80,11 @@ void UDPServer::recvPDU()
 			}
 			else { // in child
 				_isChild = true;
+				
+				// child needs to reconfigure server for new socket
 				int newPort = 0;
 				int newSocketNum = udpServerSetup(newPort);
+				removeFromPollSet(_socketNum);
 				close(_socketNum);
 				_socketNum = newSocketNum;
 				_portNumber = newPort;
