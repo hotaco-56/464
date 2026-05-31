@@ -204,14 +204,15 @@ void UDPServer::processFilenamePDU(PDU pdu)
 
 void UDPServer::sendFilenameAck()
 {
+	unsigned char padding = (unsigned char)0; // for min pdusize = 8bytes
 	PDU pdu;
 	pdu.setFlag(FILENAME_ACK);
 	pdu.setSeqNum(_pduSeqNum++);
-	pdu.addPayload((unsigned char*)&_portNumber, sizeof(_portNumber));
+	pdu.addPayload(&padding, 1);
 	auto* data = pdu.createPDU();
 
-	__PRINTF_DBG("FILENAME_ACK PDU SENT:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\tportNumber: %d\n",
-		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum(), _portNumber);
+	__PRINTF_DBG("FILENAME_ACK PDU SENT:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n",
+		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }
 

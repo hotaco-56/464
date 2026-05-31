@@ -97,16 +97,6 @@ uint8_t UDPClient::recvPDU()
 				pdu.getFlag(),
 				ntohl(pdu.getSeqNum()), 
 				pdu.getChksum());
-
-			unsigned char* payload = pdu.getPayload();
-			int newPort = 0;
-			memcpy(&newPort, payload, pdu.getPayloadLen());
-			_args.remotePort = newPort;
-			close(_socketNum);
-			removeFromPollSet(_socketNum);
-			_socketNum = setupUdpClientToServer(&_server, _args.remoteMachine, _args.remotePort);
-			addToPollSet(_socketNum);
-			__PRINTF_DBG("Connected to new socket with port: %d\n", _args.remotePort);
 			break;
 		}
 		case FILENAME_ERR:
