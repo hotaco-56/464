@@ -73,7 +73,7 @@ public:
     inline uint16_t getChksum(void) const { return _pdu.chksum; }
 
     inline void setSeqNum(uint32_t n) { _pdu.seqNum = htonl(n); } // in network order
-    inline uint32_t getSeqNum(void) const { return _pdu.seqNum; } // in network order
+    inline seqNum_t getSeqNum(void) const { return _pdu.seqNum; } // in network order
 
     inline void setFlag(uint8_t flag) { _pdu.flag = flag; }
     inline uint8_t getFlag(void) const { return _pdu.flag;  }

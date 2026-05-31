@@ -31,9 +31,13 @@ bool Window::isAcked()
     return _lower == _current;
 }
 
-void Window::ack(windowSize_t seqNum)
+void Window::ack(seqNum_t seqNum)
 {
     PDU_T* pdu = _buffer.get(seqNum);
+
+    if (pdu->valid == false)
+        return;
+
     if (ntohl(pdu->seqNum) != seqNum) {
         __PRINTF_DBG("invalid\n");
         return;
@@ -48,7 +52,7 @@ void Window::ack(windowSize_t seqNum)
 
 void Window::update(PDU_T pdu)
 {
-    _buffer.add(pdu);
-    _current++;
+    if (_buffer.add(pdu))
+        _current++;
     __PRINTF_DBG("current: %d\n", _current);
 }

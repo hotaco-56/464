@@ -23,10 +23,10 @@ public:
 
     PDU_T get(uint32_t);
     void update(PDU_T pdu);
-    void ack(windowSize_t seqNum);
+    void ack(seqNum_t seqNum);
     bool isAcked();
 
-    inline bool isClosed() const { return _current == _upper; }
+    inline bool isClosed() const { return _current >= _upper; }
 };
 
 #endif

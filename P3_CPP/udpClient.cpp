@@ -114,7 +114,9 @@ uint8_t UDPClient::recvPDU()
 		}
 		case RR:
 		{
-			uint32_t rrVal = (uint32_t)(*pdu.getPayload());
+			uint32_t rrVal = 0;
+			memcpy(&rrVal, pdu.getPayload(), sizeof(uint32_t));
+			rrVal = ntohl(rrVal);
 			__PRINTF_DBG("RR PDU receved\n");
 			__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
 			__PRINTF_DBG("\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\trr: %d\n", 

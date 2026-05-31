@@ -72,6 +72,7 @@ void UDPServer::processDataPDU(PDU pdu)
 				_toFile.write((char*)pdu.getPayload(), pdu.getPayloadLen());
 				_toFile.flush();
 				sendRR();
+				_expectedSeqNum++;
 			}
 			else if (recvdSeqNum > _expectedSeqNum) {
 				__PRINTF_DBG("received %d when expected: %d\n", recvdSeqNum, _expectedSeqNum);
@@ -143,7 +144,6 @@ void UDPServer::recvPDU()
 				pdu.getChksum());
 
 			processDataPDU(pdu);
-			_expectedSeqNum++;
 			break;
 		}
 		
@@ -232,7 +232,7 @@ void UDPServer::sendFilenameErr()
 
 void UDPServer::sendRR()
 {
-	uint16_t rrVal = _expectedSeqNum;
+	uint32_t rrVal = htonl(_expectedSeqNum);
 	PDU pdu;
 	pdu.setFlag(RR);
 	pdu.setSeqNum(_pduSeqNum++);
@@ -240,7 +240,7 @@ void UDPServer::sendRR()
 	auto* data = pdu.createPDU();
 
 	__PRINTF_DBG("RR PDU SENT:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\trr: %d\n",
-		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum(), rrVal);
+		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum(), ntohl(rrVal));
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }
 
