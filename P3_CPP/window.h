@@ -9,20 +9,24 @@
 class Window
 {
 private:
-    FIFOBuffer<PDU> _buffer;
-    uint32_t _lower = 0;
-    uint32_t _current = 0;
-    uint32_t _size;
+    FIFOBuffer _buffer;
+    uint32_t _lower = 1;
+    uint32_t _current = 1;
+    const uint32_t _size;
     uint32_t _upper;
 
+    void slide();
+    uint32_t getLowestUnacked();
 public:
     Window(windowSize_t windowSize);
     ~Window();
 
-    void get(uint32_t);
-    void update(PDU pdu);
+    PDU_T get(uint32_t);
+    void update(PDU_T pdu);
+    void ack(windowSize_t seqNum);
+    bool isAcked();
 
-    inline bool closed() const { return _current == _upper; }
+    inline bool isClosed() const { return _current == _upper; }
 };
 
 #endif

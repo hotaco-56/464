@@ -1,27 +1,30 @@
 #include "buffer.h"
 
-template <typename Datatype>
-FIFOBuffer<Datatype>::FIFOBuffer(uint32_t size)
+FIFOBuffer::FIFOBuffer(uint32_t size)
 {
     _bufferSize = size;
-    _buffer = new Datatype[size];
+    _buffer = (PDU_T*)malloc(size * sizeof(PDU_T));
 }
 
-template <typename Datatype>
-FIFOBuffer<Datatype>::~FIFOBuffer()
+FIFOBuffer::~FIFOBuffer()
 {
-    delete[] _buffer;
+    free(_buffer);
 }
 
-template <typename Datatype>
-void FIFOBuffer<Datatype>::add(Datatype data)
+void FIFOBuffer::add(PDU_T data)
 {
-    shiftBuffer();
-    _buffer[0] = data;
+    uint32_t index = ntohl(data.seqNum) % _bufferSize;
+    if (_buffer[index].valid == true) 
+        return;
+    _buffer[index] = data;
 }
 
-template <typename Datatype>
-void FIFOBuffer<Datatype>::shiftBuffer()
+void FIFOBuffer::clear(uint32_t index)
+{
+    _buffer[index % _bufferSize].valid = false;
+}
+
+void FIFOBuffer::shiftBuffer()
 {
     if (_bufferSize <= 1)
         return;
@@ -30,5 +33,3 @@ void FIFOBuffer<Datatype>::shiftBuffer()
         _buffer[i] = _buffer[i - 1];
     }
 }
-
-template class FIFOBuffer<PDU>;

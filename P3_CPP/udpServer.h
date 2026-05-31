@@ -26,6 +26,13 @@
 class UDPServer
 {
 private:
+
+    enum {
+        IN_ORDER,
+        BUFFERING,
+        FLUSHING
+    } typedef States;
+
     const int _clientAddrLen = sizeof(struct sockaddr_in6);
 
     float _errRate;
@@ -35,22 +42,25 @@ private:
     windowSize_t _windowSize = 0;
     buffSize_t _bufferSize = 0;
     char _toFilename[MAX_FILENAME_LEN + 1];
-    seqNum_t _expectedSequenceNum = 0;
+    seqNum_t _pduSeqNum = 0;
+    seqNum_t _expectedSeqNum = 0;
 
     struct sockaddr_in6 _client;
 
     bool _isChild = false;
+    States _state = IN_ORDER;
 
     std::ofstream _toFile;
 
     void openToFile(char* toFilename);
     void setup();
     void recvPDU(); // returns pdu flag
-    void parseFilenamePDU(PDU pdu);
+    void processFilenamePDU(PDU pdu);
+    void processDataPDU(PDU pdu);
     void sendFilenameAck();
     void sendFilenameErr();
     void sendRR();
-    void runInternal();
+    void sendSREJ();
 public:
     UDPServer(float err, int port);
     ~UDPServer();

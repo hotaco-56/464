@@ -3,7 +3,7 @@
 Window::Window(windowSize_t windowSize) : 
     _buffer(windowSize), 
     _size(windowSize), 
-    _upper(windowSize)
+    _upper(windowSize + 1)
 {
 }
 
@@ -11,14 +11,44 @@ Window::~Window()
 {
 }
 
-void Window::get(uint32_t i)
+void Window::slide()
 {
-    PDU pdu = _buffer.get(i);
-	__PRINTF_DBG("FILENAME PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
+    while(1) {
+        PDU_T* pdu = _buffer.get(_lower);
+
+        if (pdu->valid == false) return;
+        if (ntohl(pdu->seqNum) != _lower) return;
+        if (pdu->acked == false) return;
+
+        _buffer.clear(_lower);
+        _lower++;
+        _upper++;
+    }
 }
 
-void Window::update(PDU pdu)
+bool Window::isAcked()
+{
+    return _lower == _current;
+}
+
+void Window::ack(windowSize_t seqNum)
+{
+    PDU_T* pdu = _buffer.get(seqNum);
+    if (ntohl(pdu->seqNum) != seqNum) {
+        __PRINTF_DBG("invalid\n");
+        return;
+    }
+    __PRINTF_DBG("acking: %d, %d at buffPos %d\n", ntohl(pdu->seqNum), (uint8_t)pdu->acked, seqNum);
+    pdu->acked = true;
+
+    __PRINTF_DBG("acked: %d, %d\n", ntohl(pdu->seqNum), (uint8_t)pdu->acked);
+
+    slide();
+}
+
+void Window::update(PDU_T pdu)
 {
     _buffer.add(pdu);
     _current++;
+    __PRINTF_DBG("current: %d\n", _current);
 }

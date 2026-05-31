@@ -42,10 +42,14 @@
 #define MAX_PDU_SIZE (HEADER_SIZE + MAX_PAYLOAD_SIZE)
 
 typedef struct {
+    // must be in this order
     seqNum_t seqNum = 0;
     uint16_t chksum = 0;
     uint8_t flag = INVALID;
     unsigned char payload[MAX_PAYLOAD_SIZE] = {0};
+    uint16_t pduLen = 7; // the receiver will write to this so we know the actual pdu size
+    bool acked = false;
+    bool valid = false;
 } __attribute__((packed)) PDU_T;
 
 class PDU
@@ -53,7 +57,6 @@ class PDU
 private:
     PDU_T _pdu = {};
     uint16_t _payloadLen = 0;
-    bool _acked = false;
 
     // copy data to header section of pdu
     inline void headerCpy(unsigned char* dest) { memcpy(dest, &_pdu, HEADER_SIZE); }
@@ -64,9 +67,6 @@ public:
     PDU();
     PDU(unsigned char* PDU, uint16_t pduLen);
     ~PDU();
-
-    inline void ack() { _acked = true; }
-    inline bool isAcked() const { return _acked; }
 
     inline uint16_t calcChksum() { return (uint16_t)in_cksum((unsigned short*)&_pdu, getPDULen()); }
     inline void clearChksum(void) { _pdu.chksum = 0; }
@@ -87,7 +87,10 @@ public:
     inline uint16_t getPayloadLen() const { return _payloadLen; }
     
     inline PDU_T* createPDU() { 
+        if (calcChksum() == 0)
+            return &_pdu;
         _pdu.chksum = calcChksum();
+        _pdu.valid = true;
         return &_pdu; 
     }
     inline uint16_t getPDULen() const { return HEADER_SIZE + _payloadLen; }

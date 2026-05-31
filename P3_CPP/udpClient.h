@@ -54,7 +54,7 @@ private:
     void openFromFile();
     bool setup();
     void sendFilenamePDU();
-    void sendDataPDU(unsigned char* pdu);
+    std::streamsize sendDataPDU();
     uint8_t recvPDU();
 public:
     UDPClient(UDPClientArgs& args);

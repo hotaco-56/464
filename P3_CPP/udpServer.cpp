@@ -35,27 +35,70 @@ void UDPServer::run()
 		if (terminatedProcess > 0)
 			__PRINTF_DBG("Server cleaned up child process: %d\n", terminatedProcess);
 
+		_expectedSeqNum = 0;
 		if (pollCall(0) == _socketNum)
 			recvPDU();
 
-		if (!_isChild)
-			continue;
-
-		// start data transfer
-		__PRINTF_DBG("======================= DATA TRANS. ========================\n");
-		runInternal();
-		while (1) {
-			if (pollCall(1000) == -1)
-				__PRINTF_DBG("Timeout occured\n");
-			else
-				recvPDU();
-		}
-		return;
+		if (_isChild)
+			break;
 	}
+
+	// start data transfer
+	__PRINTF_DBG("======================= DATA TRANS. ========================\n");
+	int i = 0;
+	while (1) {
+		if (pollCall(1000) == -1) {
+			__PRINTF_DBG("Timeout occured\n");
+			if (++i == MAX_RETRANSMIT_COUNT)
+				return;
+		}
+		else {
+			__PRINTF_DBG("expected: %d\n", _expectedSeqNum);
+			recvPDU();
+		}
+	}
+	return;
 }
 
-void UDPServer::runInternal()
+void UDPServer::processDataPDU(PDU pdu)
 {
+	uint32_t recvdSeqNum = ntohl(pdu.getSeqNum());
+	switch (_state)
+	{
+		case IN_ORDER:
+		{
+			if (recvdSeqNum == _expectedSeqNum) {
+				__PRINTF_DBG("in order received\n");
+				_toFile.write((char*)pdu.getPayload(), pdu.getPayloadLen());
+				_toFile.flush();
+				sendRR();
+			}
+			else if (recvdSeqNum > _expectedSeqNum) {
+				__PRINTF_DBG("received %d when expected: %d\n", recvdSeqNum, _expectedSeqNum);
+				_state = BUFFERING;
+			}
+			else if (recvdSeqNum < _expectedSeqNum) {
+				__PRINTF_DBG("received %d when expected: %d\n", recvdSeqNum, _expectedSeqNum);
+				_state = BUFFERING;
+			}
+			break;
+		}
+
+		case BUFFERING:
+		{
+			__PRINTF_DBG("buffering\n");
+			break;
+		}
+		
+		case FLUSHING:
+		{
+
+			break;
+		}
+		
+		default:
+			break;
+	}
 
 }
 
@@ -72,15 +115,21 @@ void UDPServer::recvPDU()
 		return;
 	}
 	
-	_expectedSequenceNum = ntohl(pdu.getSeqNum()) + 1;
-
 	switch (pdu.getFlag())
 	{
 		case FILENAME: // setup
 		{
 			__PRINTF_DBG("======================= SETUP ========================\n");
-			parseFilenamePDU(pdu);
+			__PRINTF_DBG("FILENAME PDU receved\n");
+			__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
+			__PRINTF_DBG("\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+				pdu.getFlag(),
+				ntohl(pdu.getSeqNum()), 
+				pdu.getChksum());
+			processFilenamePDU(pdu);
+			__PRINTF_DBG("\twindowSize: %d\n\tbufferSize: %d\n\tfileName: %s\n", _windowSize, _bufferSize, _toFilename);
 			setup();
+			_expectedSeqNum++;
 			break;
 		}
 		
@@ -88,18 +137,13 @@ void UDPServer::recvPDU()
 		{
 			__PRINTF_DBG("DATA PDU receved\n");
 			__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
-			__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+			__PRINTF_DBG("\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
 				pdu.getFlag(),
 				ntohl(pdu.getSeqNum()), 
 				pdu.getChksum());
 
-			if (ntohl(pdu.getSeqNum() == _expectedSequenceNum + 1)) {
-				_expectedSequenceNum++;
-				_toFile.write((char*)pdu.getPayload(), pdu.getPayloadLen());
-				sendRR();
-			}
-			
-			
+			processDataPDU(pdu);
+			_expectedSeqNum++;
 			break;
 		}
 		
@@ -110,10 +154,9 @@ void UDPServer::recvPDU()
 
 void UDPServer::setup()
 {
-	// try open toFile
-	openToFile(_toFilename);
-	if (!_toFile)
-		return;
+	#ifdef __DEBUG_
+	printIPInfo(&_client);
+	#endif
 
 	pid_t pid = 0;
 	pid = fork();
@@ -124,6 +167,10 @@ void UDPServer::setup()
 	}
 	else { // in child
 		_isChild = true;
+		// try open toFile
+		openToFile(_toFilename);
+		if (!_toFile)
+			return;
 		
 		// child needs to reconfigure server for new socket
 		#ifdef __SEND_ERR_
@@ -141,7 +188,7 @@ void UDPServer::setup()
 	}
 }
 
-void UDPServer::parseFilenamePDU(PDU pdu)
+void UDPServer::processFilenamePDU(PDU pdu)
 {
 	// parse payload
 	unsigned char* payload = pdu.getPayload();
@@ -153,29 +200,17 @@ void UDPServer::parseFilenamePDU(PDU pdu)
 	payload += sizeof(_bufferSize);
 	memcpy(_toFilename, payload, fileNameLen);
 	_toFilename[fileNameLen] = '\0';
-
-	__PRINTF_DBG("Received filename pdu from client with ");
-	#ifdef __DEBUG_
-	printIPInfo(&_client);
-	#endif
-	__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
-	__PRINTF_DBG("Filename PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
-		pdu.getFlag(),
-		ntohl(pdu.getSeqNum()), 
-		pdu.getChksum());
-	__PRINTF_DBG("\twindowSize: %d\n\tbufferSize: %d\n\tfileName: %s\n", _windowSize, _bufferSize, _toFilename);
 }
 
 void UDPServer::sendFilenameAck()
 {
-	__PRINTF_DBG("Sending FILENAME_ACK pdu\n");
 	PDU pdu;
 	pdu.setFlag(FILENAME_ACK);
-	pdu.setSeqNum(_expectedSequenceNum);
+	pdu.setSeqNum(_pduSeqNum++);
 	pdu.addPayload((unsigned char*)&_portNumber, sizeof(_portNumber));
 	auto* data = pdu.createPDU();
 
-	__PRINTF_DBG("FILENAME_ACK PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\tportNumber: %d\n",
+	__PRINTF_DBG("FILENAME_ACK PDU SENT:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\tportNumber: %d\n",
 		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum(), _portNumber);
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }
@@ -183,26 +218,29 @@ void UDPServer::sendFilenameAck()
 void UDPServer::sendFilenameErr()
 {
 	unsigned char padding = (unsigned char)0; // for min pdusize = 8bytes
-	__PRINTF_DBG("Sending FILENAME_ERR pdu\n");
 	PDU pdu;
 	pdu.setFlag(FILENAME_ERR);
-	pdu.setSeqNum(_expectedSequenceNum);
+	pdu.setSeqNum(_pduSeqNum++);
 	pdu.addPayload(&padding, 1);
 	auto* data = pdu.createPDU();
 
-	__PRINTF_DBG("FILENAME_ERR PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n",
+	__PRINTF_DBG("FILENAME_ERR PDU SENT:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n",
 		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }
 
 void UDPServer::sendRR()
 {
-	uint16_t rrVal = _expectedSequenceNum + 1;
-	__PRINTF_DBG("Sending RR pdu\n");
+	uint16_t rrVal = _expectedSeqNum;
 	PDU pdu;
 	pdu.setFlag(RR);
-	pdu.setSeqNum(_expectedSequenceNum);
-	pdu.addPayload((unsigned char*)&rrVal, sizeof(_expectedSequenceNum));
+	pdu.setSeqNum(_pduSeqNum++);
+	pdu.addPayload((unsigned char*)&rrVal, sizeof(_expectedSeqNum));
+	auto* data = pdu.createPDU();
+
+	__PRINTF_DBG("RR PDU SENT:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\trr: %d\n",
+		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum(), rrVal);
+	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }
 
 void UDPServer::openToFile(char* toFilename)
@@ -213,7 +251,7 @@ void UDPServer::openToFile(char* toFilename)
 
     _toFile.clear(); // clear any previous fail state
 
-    _toFile.open(toFilename, std::ios::binary);
+    _toFile.open(toFilename, std::ios::binary | std::ios::trunc | std::ios::out);
 
     if (!_toFile) {
         printf("Failed to open file %s\n", toFilename);

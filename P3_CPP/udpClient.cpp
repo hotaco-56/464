@@ -5,6 +5,7 @@ UDPClient::UDPClient(UDPClientArgs& args) :
 	_socketNum(setupUdpClientToServer(&_server, args.remoteMachine, args.remotePort)),
 	_window(_args.windowSize)
 {
+	setupPollSet();
 	addToPollSet(_socketNum);
 
 	#ifdef __SEND_ERR_
@@ -27,43 +28,31 @@ void UDPClient::run()
 	if (!_fromFile)
 		return;
 
+	// send filename
 	if (!setup())
 		return;
 
 	// start data transfer
 	__PRINTF_DBG("============= DATA TRANS. ==============\n");
-	while (!_window.closed()) {
-		auto buffer = std::make_unique<unsigned char[]>(_args.bufferSize);
+	bool transferFinished = 0;
+	while (!transferFinished) {
+		while (!_window.isClosed()) {
+			std::streamsize bytesSent = sendDataPDU();
 
-		_fromFile.read((char*)(buffer.get()), _args.bufferSize);
-		std::streamsize bytesRead = _fromFile.gcount();
+			if (pollCall(0) == _socketNum)
+				recvPDU();
 
-		__PRINTF_DBG("Read %d byes from %s\n", (int)bytesRead, _args.fromFilename);
-		if (bytesRead > 0) {
-			PDU dataPDU;
-			dataPDU.setFlag(DATA);
-			dataPDU.setSeqNum(++_pduSeqNum);
-			dataPDU.addPayload((unsigned char*)buffer.get(), bytesRead);
-			auto* pdu = dataPDU.createPDU();
-
-			_window.update(dataPDU);
-			safeSendto(_socketNum, pdu, dataPDU.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
+			if (bytesSent == 0 && _window.isAcked())
+				return;
 		}
-		else {
-			__PRINTF_DBG("EOF reached\n");
-			break;
-		}
-
-		if (pollCall(0) == _socketNum)
-			recvPDU();
-	}
-	__PRINTF_DBG("Window closed\n");
-	while (_window.closed()) {
-		if (pollCall(1000) == -1) {
-			__PRINTF_DBG("Timeout occured\n");
-		}
-		else {
-			recvPDU();
+		// __PRINTF_DBG("Window closed\n");
+		while (_window.isClosed()) {
+			if (pollCall(1000) != _socketNum) {
+				__PRINTF_DBG("Timeout occured\n");
+			}
+			else {
+				recvPDU();
+			}
 		}
 	}
 }
@@ -77,10 +66,8 @@ bool UDPClient::setup()
 			uint8_t flag = recvPDU();
 			if (flag == FILENAME_ACK)
 				return true;
-			if (flag == FILENAME_ERR) {
-				this->~UDPClient();
-				exit(1);
-			}
+			else
+				break;
 		}
 		retransmitCount++;
 	}
@@ -95,8 +82,6 @@ uint8_t UDPClient::recvPDU()
 	dataLen = safeRecvfrom(_socketNum, data, MAX_PDU_SIZE, 0, (struct sockaddr*) &_server, &_serverAddrLen);
 	PDU pdu(data, dataLen);
 
-	_pduSeqNum = ntohl(pdu.getSeqNum()) + 1;
-
 	if (pdu.calcChksum() != 0) {
 		__PRINTF_DBG("Bad checksum on: seqNum %d\n", pdu.getSeqNum());
 		return 0;
@@ -106,25 +91,50 @@ uint8_t UDPClient::recvPDU()
 	{
 		case FILENAME_ACK:
 		{
-			__PRINTF_DBG("Received FILENAME_ACK pdu\n");
+			__PRINTF_DBG("FILENAME_ACK PDU receved\n");
+			__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
+			__PRINTF_DBG("\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+				pdu.getFlag(),
+				ntohl(pdu.getSeqNum()), 
+				pdu.getChksum());
+
 			unsigned char* payload = pdu.getPayload();
 			int newPort = 0;
 			memcpy(&newPort, payload, pdu.getPayloadLen());
 			_args.remotePort = newPort;
+			close(_socketNum);
+			removeFromPollSet(_socketNum);
 			_socketNum = setupUdpClientToServer(&_server, _args.remoteMachine, _args.remotePort);
+			addToPollSet(_socketNum);
 			__PRINTF_DBG("Connected to new socket with port: %d\n", _args.remotePort);
 			break;
 		}
 		case FILENAME_ERR:
 		{
-			__PRINTF_DBG("Received FILENAME_ERR pdu\n");
+			__PRINTF_DBG("FILENAME_ERR PDU receved\n");
+			__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
+			__PRINTF_DBG("\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+				pdu.getFlag(),
+				ntohl(pdu.getSeqNum()), 
+				pdu.getChksum());
+
 			this->~UDPClient();
 			exit(1);
 			break;
 		}
 		case RR:
 		{
-			__PRINTF_DBG("Received RR pdu\n");
+			uint32_t rrVal = (uint32_t)(*pdu.getPayload());
+			__PRINTF_DBG("RR PDU receved\n");
+			__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
+			__PRINTF_DBG("\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\trr: %d\n", 
+				pdu.getFlag(),
+				ntohl(pdu.getSeqNum()), 
+				pdu.getChksum(),
+				rrVal);
+
+			_window.ack(rrVal);
+			
 			break;
 		}
 		case SREJ:
@@ -139,22 +149,49 @@ uint8_t UDPClient::recvPDU()
 	return pdu.getFlag();
 }
 
+std::streamsize UDPClient::sendDataPDU()
+{
+	auto buffer = std::make_unique<unsigned char[]>(_args.bufferSize);
+
+	_fromFile.read((char*)(buffer.get()), _args.bufferSize);
+	std::streamsize bytesRead = _fromFile.gcount();
+
+	if (bytesRead > 0) {
+		PDU dataPDU;
+		dataPDU.setFlag(DATA);
+		dataPDU.setSeqNum(_pduSeqNum++);
+		dataPDU.addPayload((unsigned char*)buffer.get(), bytesRead);
+		auto* pdu = dataPDU.createPDU();
+		_window.update(*pdu);
+
+		__PRINTF_DBG("DATA PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+			dataPDU.getFlag(), 
+			ntohl(dataPDU.getSeqNum()), 
+			dataPDU.getChksum());
+		safeSendto(_socketNum, pdu, dataPDU.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
+	}
+
+	return bytesRead;
+}
+
 /*
 	sends 32-bit header + window-size + buffer-size + to-filename
 	max size : 7 + 2 + 2 + 100 = 111
 */
 void UDPClient::sendFilenamePDU()
 {
-	__PRINTF_DBG("Sending FILENAME pdu\n");
 	PDU pdu;
 	pdu.setFlag(FILENAME);
-	pdu.setSeqNum(0);
+	pdu.setSeqNum(_pduSeqNum++);
 	pdu.addPayload((unsigned char*)&_args.windowSize, sizeof(_args.windowSize));
 	pdu.addPayload((unsigned char*)&_args.bufferSize, sizeof(_args.bufferSize));
 	pdu.addPayload((unsigned char*)_args.toFilename, strlen(_args.toFilename));
 	auto* data = pdu.createPDU();
 
-	__PRINTF_DBG("FILENAME PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
+	__PRINTF_DBG("FILENAME PDU SENT:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+		pdu.getFlag(), 
+		ntohl(pdu.getSeqNum()), 
+		pdu.getChksum());
 	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
 }
 
