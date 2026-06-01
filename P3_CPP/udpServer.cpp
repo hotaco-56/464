@@ -71,7 +71,7 @@ void UDPServer::processDataPDU(PDU pdu)
 		{
 			if (recvdSeqNum == _expectedSeqNum) {
 				__PRINTF_DBG("in order received\n");
-				printf("WRITE direct/buffer seq=%u expected=%u len=%u\n", 
+				__PRINTF_DBG("WRITE direct/buffer seq=%u expected=%u len=%u\n", 
 					ntohl(pdu.getSeqNum()),
 					_expectedSeqNum, 
 					pdu.getPDULen());		
@@ -103,7 +103,7 @@ void UDPServer::processDataPDU(PDU pdu)
 				break;
 			}
 			else if (recvdSeqNum == _expectedSeqNum) {
-				printf("WRITE direct/buffer seq=%u expected=%u len=%u\n", 
+				__PRINTF_DBG("WRITE direct/buffer seq=%u expected=%u len=%u\n", 
 					ntohl(pdu.getSeqNum()),
 					_expectedSeqNum, 
 					pdu.getPDULen());		
@@ -141,8 +141,6 @@ void UDPServer::processDataPDU(PDU pdu)
 			}
 			else if (_expectedSeqNum >= _highestSeqNum) {
 				_state = IN_ORDER;
-				// _toFile.write((char*)pdu.getPayload(), pdu.getPayloadLen());
-				// _toFile.flush();
 				sendRR(_expectedSeqNum);
 				_expectedSeqNum++;
 			}

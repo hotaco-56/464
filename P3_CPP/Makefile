@@ -8,7 +8,7 @@ OBJS = networks.o gethostbyname.o safeUtil.o pollLib.o udpClient.o udpServer.o p
 
 # uncomment next two lines if you're using sendtoErr() library
 LIBS += libcpe464.2.21.a -ldl
-CXXFLAGS += -D__LIBCPE464_ -D__DEBUG_
+CXXFLAGS += -D__LIBCPE464_
 
 all: rcopy server cleano
 

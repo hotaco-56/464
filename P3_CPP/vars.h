@@ -14,8 +14,8 @@ const uint8_t MAX_RETRANSMIT_COUNT = 10;
 #define __PRINTF_DBG printf
 #endif
 
-// #define __SEND_ERR_
-#define __SEND_ERR_DBG_ DEBUG_OFF
-// #define __SEND_ERR_DBG_ DEBUG_ON
+#define __SEND_ERR_
+// #define __SEND_ERR_DBG_ DEBUG_OFF
+#define __SEND_ERR_DBG_ DEBUG_ON
 
 #endif

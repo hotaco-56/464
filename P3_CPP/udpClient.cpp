@@ -50,15 +50,20 @@ void UDPClient::run()
 		}
 		else  {
 			__PRINTF_DBG("Window closed\n");
-			if (pollCall(1000) != _socketNum) {
+			if (pollCall(1000) == _socketNum) {
+				recvPDU();
+				_timeoutcount = 0;
+				while (pollCall(0) == _socketNum) {
+					recvPDU();
+				}
+			}
+			else if (!_window.isAcked()){
 				resendLowestPDU();
 				_timeoutcount++;
 			}
-			else if (!_window.isAcked()){
-				recvPDU();
-				_timeoutcount = 0;
-			}
 		}
+		if (_timeoutcount > MAX_RETRANSMIT_COUNT)
+			return;
 	}
 	__PRINTF_DBG("Starting Teardown\n");
 	teardown();
