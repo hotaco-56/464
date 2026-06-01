@@ -87,10 +87,11 @@ public:
     inline uint16_t getPayloadLen() const { return _payloadLen; }
     
     inline PDU_T* createPDU() { 
+        _pdu.valid = true;
+        _pdu.pduLen = getPDULen();
         if (calcChksum() == 0)
             return &_pdu;
         _pdu.chksum = calcChksum();
-        _pdu.valid = true;
         return &_pdu; 
     }
     inline uint16_t getPDULen() const { return HEADER_SIZE + _payloadLen; }

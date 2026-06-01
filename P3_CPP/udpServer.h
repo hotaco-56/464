@@ -44,6 +44,7 @@ private:
     char _toFilename[MAX_FILENAME_LEN + 1];
     seqNum_t _pduSeqNum = 0;
     seqNum_t _expectedSeqNum = 0;
+    seqNum_t _highestSeqNum = _expectedSeqNum;
 
     struct sockaddr_in6 _client;
 
@@ -51,6 +52,7 @@ private:
     States _state = IN_ORDER;
 
     std::ofstream _toFile;
+    Window _window;
 
     void openToFile(char* toFilename);
     void setup();
@@ -59,8 +61,8 @@ private:
     void processDataPDU(PDU pdu);
     void sendFilenameAck();
     void sendFilenameErr();
-    void sendRR();
-    void sendSREJ();
+    void sendRR(seqNum_t);
+    void sendSREJ(seqNum_t);
 public:
     UDPServer(float err, int port);
     ~UDPServer();

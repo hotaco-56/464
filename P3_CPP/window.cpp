@@ -3,8 +3,22 @@
 Window::Window(windowSize_t windowSize) : 
     _buffer(windowSize), 
     _size(windowSize), 
-    _upper(windowSize + 1)
+    _upper(windowSize)
 {
+}
+
+Window::Window() : _buffer() {}
+
+void Window::init(windowSize_t windowSize) 
+{
+    _buffer.init(windowSize);
+    _size = windowSize;
+    _upper = windowSize + 1;
+}
+
+PDU_T Window::get(seqNum_t seqNum)
+{
+    return *_buffer.get(seqNum);
 }
 
 Window::~Window()
@@ -31,27 +45,40 @@ bool Window::isAcked()
     return _lower == _current;
 }
 
-void Window::ack(seqNum_t seqNum)
+bool Window::contains(seqNum_t seqNum)
 {
-    PDU_T* pdu = _buffer.get(seqNum);
+    bool containsPDU = false;
+    PDU_T pdu = *_buffer.get(seqNum);
+    containsPDU = (pdu.valid) && (ntohl(pdu.seqNum) == seqNum);
 
-    if (pdu->valid == false)
-        return;
+    __PRINTF_DBG("window %s contain %d, lowest: %d\n", containsPDU ? "does" : "doesn't", seqNum, _lower);
 
-    if (ntohl(pdu->seqNum) != seqNum) {
-        __PRINTF_DBG("invalid\n");
-        return;
-    }
-    __PRINTF_DBG("acking: %d, %d at buffPos %d\n", ntohl(pdu->seqNum), (uint8_t)pdu->acked, seqNum);
-    pdu->acked = true;
-
-    __PRINTF_DBG("acked: %d, %d\n", ntohl(pdu->seqNum), (uint8_t)pdu->acked);
-
-    slide();
+    return containsPDU;
 }
 
-void Window::update(PDU_T pdu)
+void Window::clear(seqNum_t seqNum)
 {
+    _buffer.clear(seqNum);
+}
+
+void Window::ack(seqNum_t seqNum)
+{
+    while (_lower <= seqNum) {
+        PDU_T* pdu = _buffer.get(seqNum);
+        _buffer.clear(seqNum);
+        __PRINTF_DBG("acking: %d, %d at buffPos %d\n", ntohl(pdu->seqNum), (uint8_t)pdu->acked, seqNum);
+        pdu->acked = true;
+
+        __PRINTF_DBG("acked: %d, %d\n", ntohl(pdu->seqNum), (uint8_t)pdu->acked);
+        _lower++;
+        _upper++;
+    }
+
+}
+
+void Window::update(PDU_T pdu, uint16_t pduLen)
+{
+    pdu.pduLen = pduLen;
     if (_buffer.add(pdu))
         _current++;
     __PRINTF_DBG("current: %d\n", _current);

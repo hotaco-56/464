@@ -55,7 +55,9 @@ private:
     bool setup();
     void sendFilenamePDU();
     std::streamsize sendDataPDU();
+    void sendDataPDU(seqNum_t);
     uint8_t recvPDU();
+    void resendLowestPDU();
 public:
     UDPClient(UDPClientArgs& args);
     ~UDPClient();

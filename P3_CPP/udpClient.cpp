@@ -35,20 +35,20 @@ void UDPClient::run()
 	// start data transfer
 	__PRINTF_DBG("============= DATA TRANS. ==============\n");
 	bool transferFinished = 0;
-	while (!transferFinished) {
+	while (!(transferFinished && _window.isAcked())) {
 		while (!_window.isClosed()) {
 			std::streamsize bytesSent = sendDataPDU();
 
 			if (pollCall(0) == _socketNum)
 				recvPDU();
 
-			if (bytesSent == 0 && _window.isAcked())
-				return;
+			if (bytesSent == 0)
+				transferFinished = true;
 		}
-		// __PRINTF_DBG("Window closed\n");
 		while (_window.isClosed()) {
+			__PRINTF_DBG("Window closed\n");
 			if (pollCall(1000) != _socketNum) {
-				__PRINTF_DBG("Timeout occured\n");
+				resendLowestPDU();
 			}
 			else {
 				recvPDU();
@@ -132,6 +132,18 @@ uint8_t UDPClient::recvPDU()
 		case SREJ:
 		{
 			__PRINTF_DBG("Received SREJ pdu\n");
+			uint32_t srejVal = 0;
+			memcpy(&srejVal, pdu.getPayload(), sizeof(uint32_t));
+			srejVal = ntohl(srejVal);
+			__PRINTF_DBG("SREJ PDU receved\n");
+			__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
+			__PRINTF_DBG("\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n\tsrej: %d\n", 
+				pdu.getFlag(),
+				ntohl(pdu.getSeqNum()), 
+				pdu.getChksum(),
+				srejVal);
+
+			sendDataPDU(srejVal);
 			break;
 		}
 		default:
@@ -139,6 +151,28 @@ uint8_t UDPClient::recvPDU()
 	}
 
 	return pdu.getFlag();
+}
+
+void UDPClient::resendLowestPDU()
+{
+	seqNum_t lowest = _window.getLowestUnacked();
+	PDU_T dataPDU = _window.get(lowest);
+	__PRINTF_DBG("DATA PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+		dataPDU.flag, 
+		ntohl(dataPDU.seqNum), 
+		dataPDU.chksum);
+	safeSendto(_socketNum, &dataPDU, dataPDU.pduLen, 0, (struct sockaddr*) &_server, _serverAddrLen);
+}
+
+void UDPClient::sendDataPDU(seqNum_t seqNum)
+{
+	PDU_T dataPDU = _window.get(seqNum);
+
+	__PRINTF_DBG("DATA PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+		dataPDU.flag, 
+		ntohl(dataPDU.seqNum), 
+		dataPDU.chksum);
+	safeSendto(_socketNum, &dataPDU, dataPDU.pduLen, 0, (struct sockaddr*) &_server, _serverAddrLen);
 }
 
 std::streamsize UDPClient::sendDataPDU()
@@ -154,7 +188,7 @@ std::streamsize UDPClient::sendDataPDU()
 		dataPDU.setSeqNum(_pduSeqNum++);
 		dataPDU.addPayload((unsigned char*)buffer.get(), bytesRead);
 		auto* pdu = dataPDU.createPDU();
-		_window.update(*pdu);
+		_window.update(*pdu, dataPDU.getPDULen());
 
 		__PRINTF_DBG("DATA PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
 			dataPDU.getFlag(), 
