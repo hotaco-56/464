@@ -137,7 +137,7 @@ void UDPServer::processDataPDU(PDU pdu)
 			{
 				_state = BUFFERING;
 				sendSREJ(_expectedSeqNum);
-				sendRR(_expectedSeqNum);
+				sendRR(_expectedSeqNum-1);
 			}
 			else if (_expectedSeqNum >= _highestSeqNum) {
 				_state = IN_ORDER;

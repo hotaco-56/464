@@ -1,9 +1,9 @@
 #include "window.h"
 
 Window::Window(windowSize_t windowSize) : 
-    _buffer(windowSize), 
+    _buffer(windowSize + 1), 
     _size(windowSize), 
-    _upper(windowSize)
+    _upper(windowSize + 1)
 {
 }
 
