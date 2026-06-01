@@ -34,27 +34,30 @@ void UDPClient::run()
 
 	// start data transfer
 	__PRINTF_DBG("============= DATA TRANS. ==============\n");
-	bool transferFinished = 0;
+	bool transferFinished = false;
 	while (!(transferFinished && _window.isAcked())) {
-		while (!_window.isClosed()) {
+		if (!_window.isClosed() && !transferFinished) {
 			std::streamsize bytesSent = sendDataPDU();
 
 			if (pollCall(0) == _socketNum)
 				recvPDU();
 
-			if (bytesSent == 0)
+			if (bytesSent == 0) {
 				transferFinished = true;
+				__PRINTF_DBG("EOF reached\n");
+			}
 		}
-		while (_window.isClosed()) {
+		else  {
 			__PRINTF_DBG("Window closed\n");
 			if (pollCall(1000) != _socketNum) {
 				resendLowestPDU();
 			}
-			else {
+			else if (!_window.isAcked()){
 				recvPDU();
 			}
 		}
 	}
+	__PRINTF_DBG("DONE\n");
 }
 
 bool UDPClient::setup()
@@ -166,7 +169,10 @@ void UDPClient::resendLowestPDU()
 
 void UDPClient::sendDataPDU(seqNum_t seqNum)
 {
+	if (!_window.contains(seqNum))
+		return;
 	PDU_T dataPDU = _window.get(seqNum);
+	__PRINTF_DBG("SREJ requested %u, slot contains %u, valid=%d\n", seqNum, ntohl(dataPDU.seqNum), dataPDU.valid);
 
 	__PRINTF_DBG("DATA PDU:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
 		dataPDU.flag, 

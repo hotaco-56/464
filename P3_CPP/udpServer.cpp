@@ -50,7 +50,6 @@ void UDPServer::run()
 	while (1) {
 		if (pollCall(1000) == -1) {
 			__PRINTF_DBG("Timeout occured\n");
-			// sendSREJ(_expectedSeqNum);
 			if (++i == MAX_RETRANSMIT_COUNT)
 				return;
 		}
@@ -72,6 +71,10 @@ void UDPServer::processDataPDU(PDU pdu)
 		{
 			if (recvdSeqNum == _expectedSeqNum) {
 				__PRINTF_DBG("in order received\n");
+				printf("WRITE direct/buffer seq=%u expected=%u len=%u\n", 
+					ntohl(pdu.getSeqNum()),
+					_expectedSeqNum, 
+					pdu.getPDULen());		
 				_toFile.write((char*)pdu.getPayload(), pdu.getPayloadLen());
 				_toFile.flush();
 				sendRR(_expectedSeqNum);
@@ -85,10 +88,6 @@ void UDPServer::processDataPDU(PDU pdu)
 				_window.update(*bufferPDU, bufferPDU->pduLen);
 				sendSREJ(_expectedSeqNum);
 				_highestSeqNum = recvdSeqNum;
-			}
-			else if (recvdSeqNum < _expectedSeqNum) {
-				__PRINTF_DBG("received %d when expected: %d\n", recvdSeqNum, _expectedSeqNum);
-				_state = BUFFERING;
 			}
 			break;
 		}
@@ -104,6 +103,10 @@ void UDPServer::processDataPDU(PDU pdu)
 				break;
 			}
 			else if (recvdSeqNum == _expectedSeqNum) {
+				printf("WRITE direct/buffer seq=%u expected=%u len=%u\n", 
+					ntohl(pdu.getSeqNum()),
+					_expectedSeqNum, 
+					pdu.getPDULen());		
 				_toFile.write((char*)pdu.getPayload(), pdu.getPayloadLen());
 				_toFile.flush();
 				sendRR(_expectedSeqNum);
@@ -116,8 +119,13 @@ void UDPServer::processDataPDU(PDU pdu)
 		case FLUSHING:
 		{
 			__PRINTF_DBG("Flushing\n");
+			__PRINTF_DBG("highest %d\n", _highestSeqNum);
 			while (_window.contains(_expectedSeqNum)) {
 				PDU_T flushPDU = _window.get(_expectedSeqNum);
+				printf("WRITE direct/buffer seq=%u expected=%u len=%u\n", 
+					ntohl(flushPDU.seqNum),
+					_expectedSeqNum, 
+					flushPDU.pduLen);		
 				_toFile.write((char*)flushPDU.payload, flushPDU.pduLen - HEADER_SIZE);
 				_toFile.flush();
 				_window.clear(_expectedSeqNum);
@@ -131,10 +139,10 @@ void UDPServer::processDataPDU(PDU pdu)
 				sendSREJ(_expectedSeqNum);
 				sendRR(_expectedSeqNum);
 			}
-			else if (_expectedSeqNum == _highestSeqNum) {
+			else if (_expectedSeqNum >= _highestSeqNum) {
 				_state = IN_ORDER;
-				_toFile.write((char*)pdu.getPayload(), pdu.getPayloadLen());
-				_toFile.flush();
+				// _toFile.write((char*)pdu.getPayload(), pdu.getPayloadLen());
+				// _toFile.flush();
 				sendRR(_expectedSeqNum);
 				_expectedSeqNum++;
 			}

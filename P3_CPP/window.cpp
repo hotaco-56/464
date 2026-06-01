@@ -13,7 +13,7 @@ void Window::init(windowSize_t windowSize)
 {
     _buffer.init(windowSize);
     _size = windowSize;
-    _upper = windowSize + 1;
+    _upper = windowSize;
 }
 
 PDU_T Window::get(seqNum_t seqNum)
@@ -64,8 +64,8 @@ void Window::clear(seqNum_t seqNum)
 void Window::ack(seqNum_t seqNum)
 {
     while (_lower <= seqNum) {
-        PDU_T* pdu = _buffer.get(seqNum);
-        _buffer.clear(seqNum);
+        PDU_T* pdu = _buffer.get(_lower);
+        _buffer.clear(_lower);
         __PRINTF_DBG("acking: %d, %d at buffPos %d\n", ntohl(pdu->seqNum), (uint8_t)pdu->acked, seqNum);
         pdu->acked = true;
 
