@@ -36,6 +36,9 @@
 #define FILENAME_ACK   8U
 #define FILENAME_ERR   32U
 #define INVALID        33U
+#define TEARDOWN       34U
+#define TEARDOWN_ACK   35U
+#define FIN            36U
 
 #define MAX_PAYLOAD_SIZE 1400UL
 #define HEADER_SIZE 7U

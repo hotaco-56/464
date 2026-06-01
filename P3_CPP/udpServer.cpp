@@ -198,6 +198,38 @@ void UDPServer::recvPDU()
 			processDataPDU(pdu);
 			break;
 		}
+
+		case TEARDOWN:
+		{
+			__PRINTF_DBG("TEARDOWN PDU receved\n");
+			__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
+			__PRINTF_DBG("\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+				pdu.getFlag(),
+				ntohl(pdu.getSeqNum()), 
+				pdu.getChksum());
+
+			// parse payload
+			unsigned char* payload = pdu.getPayload();
+			seqNum_t eofSeqnum = 0;
+
+			memcpy(&eofSeqnum, payload, sizeof(seqNum_t));
+			if (eofSeqnum <= _expectedSeqNum) {
+				sendTeardownAck();
+			}
+			break;
+		}
+
+		case FIN:
+		{
+			__PRINTF_DBG("FIN PDU receved\n");
+			__PRINTF_DBG("\tPDULen: %d\n\tPayloadLen: %d\n", pdu.getPDULen(), pdu.getPayloadLen());
+			__PRINTF_DBG("\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+				pdu.getFlag(),
+				ntohl(pdu.getSeqNum()), 
+				pdu.getChksum());
+			this->~UDPServer();
+			exit(0);
+		}
 		
 		default:
 			break;
@@ -240,6 +272,7 @@ void UDPServer::setup()
 	}
 }
 
+
 void UDPServer::processFilenamePDU(PDU pdu)
 {
 	// parse payload
@@ -252,6 +285,20 @@ void UDPServer::processFilenamePDU(PDU pdu)
 	payload += sizeof(_bufferSize);
 	memcpy(_toFilename, payload, fileNameLen);
 	_toFilename[fileNameLen] = '\0';
+}
+
+void UDPServer::sendTeardownAck()
+{
+	unsigned char padding = (unsigned char)0; // for min pdusize = 8bytes
+	PDU pdu;
+	pdu.setFlag(TEARDOWN_ACK);
+	pdu.setSeqNum(_pduSeqNum++);
+	pdu.addPayload(&padding, 1);
+	auto* data = pdu.createPDU();
+
+	__PRINTF_DBG("TEARDOWN_ACK PDU SENT:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n",
+		 pdu.getFlag(), ntohl(pdu.getSeqNum()), pdu.getChksum());
+	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_client, _clientAddrLen);
 }
 
 void UDPServer::sendFilenameAck()

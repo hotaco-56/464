@@ -59,7 +59,9 @@ private:
     void recvPDU(); // returns pdu flag
     void processFilenamePDU(PDU pdu);
     void processDataPDU(PDU pdu);
+    void processTeardownPDU(PDU pdu);
     void sendFilenameAck();
+    void sendTeardownAck();
     void sendFilenameErr();
     void sendRR(seqNum_t);
     void sendSREJ(seqNum_t);

@@ -51,8 +51,12 @@ private:
     seqNum_t _pduSeqNum = 0;
 
     std::ifstream _fromFile;
+    seqNum_t lastDataPDUSeqNum = 0;
     void openFromFile();
+    void teardown();
     bool setup();
+    void sendFinPDU();
+    void sendTeardownPDU();
     void sendFilenamePDU();
     std::streamsize sendDataPDU();
     void sendDataPDU(seqNum_t);

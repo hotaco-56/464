@@ -45,6 +45,7 @@ void UDPClient::run()
 			if (bytesSent == 0) {
 				transferFinished = true;
 				__PRINTF_DBG("EOF reached\n");
+				lastDataPDUSeqNum = _pduSeqNum;
 			}
 		}
 		else  {
@@ -57,7 +58,27 @@ void UDPClient::run()
 			}
 		}
 	}
-	__PRINTF_DBG("DONE\n");
+	__PRINTF_DBG("Starting Teardown\n");
+	teardown();
+}
+
+void UDPClient::teardown()
+{
+	uint8_t count = 0;
+	while(count < MAX_RETRANSMIT_COUNT) {
+		sendTeardownPDU();
+
+		if (pollCall(1000) != _socketNum) {
+			sendTeardownPDU();
+			count++;
+		}
+		else {
+			if (recvPDU() == TEARDOWN_ACK) {
+				sendFinPDU();
+				return;
+			}
+		}
+	}	
 }
 
 bool UDPClient::setup()
@@ -154,6 +175,37 @@ uint8_t UDPClient::recvPDU()
 	}
 
 	return pdu.getFlag();
+}
+
+void UDPClient::sendFinPDU()
+{
+	PDU pdu;
+	pdu.setFlag(FIN);
+	pdu.setSeqNum(_pduSeqNum++);
+	unsigned char padding = 0;
+	pdu.addPayload(&padding, 1);
+	auto* data = pdu.createPDU();
+
+	__PRINTF_DBG("FIN PDU SENT:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+		pdu.getFlag(), 
+		ntohl(pdu.getSeqNum()), 
+		pdu.getChksum());
+	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
+}
+
+void UDPClient::sendTeardownPDU()
+{
+	PDU pdu;
+	pdu.setFlag(TEARDOWN);
+	pdu.setSeqNum(_pduSeqNum++);
+	pdu.addPayload((unsigned char*)&lastDataPDUSeqNum, sizeof(seqNum_t));
+	auto* data = pdu.createPDU();
+
+	__PRINTF_DBG("TEARDOWN PDU SENT:\n\tflag: %d\n\tseqNum: %u\n\tchksum: %d\n", 
+		pdu.getFlag(), 
+		ntohl(pdu.getSeqNum()), 
+		pdu.getChksum());
+	safeSendto(_socketNum, data, pdu.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
 }
 
 void UDPClient::resendLowestPDU()
