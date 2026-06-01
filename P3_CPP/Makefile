@@ -1,7 +1,7 @@
 # updated to use C++
 
 CXX = g++
-CXXFLAGS = -g -Wall -std=gnu++14  -Wno-register -Wno-unused-value
+CXXFLAGS = -g -Wall -std=gnu++11  -Wno-register -Wno-unused-value
 
 SRC = networks.cpp gethostbyname.cpp safeUtil.cpp pollLib.cpp udpClient.cpp udpServer.cpp pdu.cpp checksum.cpp buffer.cpp window.cpp
 OBJS = networks.o gethostbyname.o safeUtil.o pollLib.o udpClient.o udpServer.o pdu.o checksum.o buffer.o window.o

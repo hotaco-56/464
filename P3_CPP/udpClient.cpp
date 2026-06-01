@@ -242,16 +242,17 @@ void UDPClient::sendDataPDU(seqNum_t seqNum)
 
 std::streamsize UDPClient::sendDataPDU()
 {
-	auto buffer = std::make_unique<unsigned char[]>(_args.bufferSize);
+	unsigned char* buffer = new unsigned char[_args.bufferSize];
 
-	_fromFile.read((char*)(buffer.get()), _args.bufferSize);
+	_fromFile.read((char*)buffer, _args.bufferSize);
 	std::streamsize bytesRead = _fromFile.gcount();
 
 	if (bytesRead > 0) {
 		PDU dataPDU;
 		dataPDU.setFlag(DATA);
 		dataPDU.setSeqNum(_pduSeqNum++);
-		dataPDU.addPayload((unsigned char*)buffer.get(), bytesRead);
+		dataPDU.addPayload(buffer, bytesRead);
+
 		auto* pdu = dataPDU.createPDU();
 		_window.update(*pdu, dataPDU.getPDULen());
 
@@ -259,8 +260,11 @@ std::streamsize UDPClient::sendDataPDU()
 			dataPDU.getFlag(), 
 			ntohl(dataPDU.getSeqNum()), 
 			dataPDU.getChksum());
-		safeSendto(_socketNum, pdu, dataPDU.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
+
+		safeSendto( _socketNum, pdu, dataPDU.getPDULen(), 0, (struct sockaddr*) &_server, _serverAddrLen);
 	}
+
+	delete[] buffer;
 
 	return bytesRead;
 }
