@@ -49,6 +49,7 @@ private:
 
     Window _window;
     seqNum_t _pduSeqNum = 0;
+	uint8_t _timeoutcount = 0;
 
     std::ifstream _fromFile;
     seqNum_t lastDataPDUSeqNum = 0;

@@ -52,9 +52,11 @@ void UDPClient::run()
 			__PRINTF_DBG("Window closed\n");
 			if (pollCall(1000) != _socketNum) {
 				resendLowestPDU();
+				_timeoutcount++;
 			}
 			else if (!_window.isAcked()){
 				recvPDU();
+				_timeoutcount = 0;
 			}
 		}
 	}
